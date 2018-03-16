@@ -4,6 +4,7 @@
 #include "logger.h"
 #include "capture_frame.h"
 #include <opencv2/opencv.hpp>
+#include <math.h>
 
 CaptureFrame Algorithm::CLAHE_dehaze(CaptureFrame object) //CLAHE based basic dehazing algorithm
 {
@@ -144,6 +145,45 @@ CaptureFrame Algorithm::u_dark_channel(CaptureFrame input_image, int radius)
     return output;
 }
 
+CaptureFrame Algorithm::local_contrast(CaptureFrame input_image)
+{
+    const float pi = 3.141592;
+    cv::Mat temp = input_image.retrieve_image().clone();
+    cv::Mat greyscale_image(temp.rows,temp.cols,CV_8UC1);
+    cv::cvtColor( temp, greyscale_image, CV_BGR2GRAY );
+    cv::imshow("sdfjds",greyscale_image);
+    cv::waitKey(0);
+    float h[] = {1.0/16.0 , 4.0/16.0 , 6.0/16.0 , 4.0/16.0 , 1.0/16.0 };
+    int length = sizeof(h)/sizeof(*h);
+    cv::Mat mask(length,length,CV_32FC1);
+    for(int i = 0 ; i < length ; i++)
+    {
+        for(int j = 0 ; j < length ; j++)
+        {
+            mask.at<float>(i,j) = h[i] * h[j];
+            // std::cout<<h[i]<<"\t"<<h[j]<<"\n";
+        }        
+    }
+    // std::cout<<mask;
+    // std::cout<<length;
+    cv::Mat local_contrast_image;
+    greyscale_image.convertTo(greyscale_image,CV_32FC1);
+    
+    cv::filter2D(greyscale_image,local_contrast_image,mask.depth(),mask);
+    // for(int i = 0; i < local_contrast_image.rows ; i++)
+    // {
+    //     for(int j = 0; j < local_contrast_image.cols ; j++)
+    //     {
+    //         if(local_contrast_image.at<float>(i,j) < pi/2.75)
+    //         local_contrast_image.at<float>(i,j) = pi/2.75;
+    //     }
+    // }
+    // cv::subtract(greyscale_image,local_contrast_image,local_contrast_image);
+    // local_contrast_image.convertTo(local_contrast_image,CV_8UC3);
+    CaptureFrame output(local_contrast_image,"Local Contrast");
+    return output;
+}
+
 CaptureFrame Algorithm::saturation_map(CaptureFrame input_image, int radius)
 {
     cv::Mat temp = input_image.retrieve_image().clone();
@@ -155,6 +195,138 @@ CaptureFrame Algorithm::saturation_map(CaptureFrame input_image, int radius)
     CaptureFrame output(channels[2],"saturation map");
     return output;
 }
+
+CaptureFrame Algorithm::balance_white(CaptureFrame input_image)
+{
+    cv::Mat white_bal = input_image.retrieve_image();
+    balance_white(white_bal);
+    CaptureFrame output(white_bal,"White Balanced Image");
+    return output;
+
+}
+
+void Algorithm::balance_white(cv::Mat mat) //MIT code
+{
+    double discard_ratio = 0.05;
+    int hists[3][256];
+    memset(hists, 0, 3 * 256 * sizeof(int));
+
+    for (int y = 0; y < mat.rows; ++y)
+    {
+        uchar *ptr = mat.ptr<uchar>(y);
+        for (int x = 0; x < mat.cols; ++x)
+        {
+            for (int j = 0; j < 3; ++j)
+            {
+                hists[j][ptr[x * 3 + j]] += 1;
+            }
+        }
+    }
+
+    // cumulative hist
+    int total = mat.cols * mat.rows;
+    int vmin[3], vmax[3];
+    for (int i = 0; i < 3; ++i)
+    {
+        for (int j = 0; j < 255; ++j)
+        {
+            hists[i][j + 1] += hists[i][j];
+        }
+        vmin[i] = 0;
+        vmax[i] = 255;
+        while (hists[i][vmin[i]] < discard_ratio * total)
+            vmin[i] += 1;
+        while (hists[i][vmax[i]] > (1 - discard_ratio) * total)
+            vmax[i] -= 1;
+        if (vmax[i] < 255 - 1)
+            vmax[i] += 1;
+    }
+
+    for (int y = 0; y < mat.rows; ++y)
+    {
+        uchar *ptr = mat.ptr<uchar>(y);
+        for (int x = 0; x < mat.cols; ++x)
+        {
+            for (int j = 0; j < 3; ++j)
+            {
+                int val = ptr[x * 3 + j];
+                if (val < vmin[j])
+                    val = vmin[j];
+                if (val > vmax[j])
+                    val = vmax[j];
+                ptr[x * 3 + j] = static_cast<uchar>((val - vmin[j]) * 255.0 / (vmax[j] - vmin[j]));
+            }
+        }
+    }
+}
+
+CaptureFrame Algorithm::laplacian_contrast(CaptureFrame input_image)
+{
+    cv::Mat temp = input_image.retrieve_image().clone();
+    cv::Mat laplacian;
+    cv::Mat greyscale_image(temp.rows,temp.cols,CV_8UC1);
+    cv::cvtColor( temp, greyscale_image, CV_BGR2GRAY );
+
+    cv::Laplacian(temp,laplacian,CV_16SC3);
+    laplacian.convertTo(laplacian,CV_8UC1);
+    // cv::imshow("laplacian contrast",laplacian);
+    // cv::waitKey(0);
+    CaptureFrame output(laplacian,"Laplacian Constrast");
+    return output;
+}
+
+CaptureFrame Algorithm::saliency_contrast(CaptureFrame input_image)
+{
+    cv::Mat temp = input_image.retrieve_image().clone();
+    cv::Mat lab_image,l_channel,a_channel,b_channel;
+    
+    cv::cvtColor(temp,lab_image,CV_BGR2Lab);
+    std::vector<cv::Mat> channels;
+    cv::split(lab_image,channels);
+    channels[0].convertTo(l_channel,CV_32FC1);
+    channels[1].convertTo(a_channel,CV_32FC1);
+    channels[2].convertTo(b_channel,CV_32FC1);
+    
+    double l_mean = cv::mean(l_channel).val[0];
+    double a_mean = cv::mean(a_channel).val[0];
+    double b_mean = cv::mean(b_channel).val[0];
+
+    cv::Mat saliency_map = cv::Mat::zeros(l_channel.rows,l_channel.cols,l_channel.type());
+    cv::subtract(l_channel,cv::Scalar(l_mean),l_channel);
+    cv::subtract(a_channel,cv::Scalar(a_mean),a_channel);
+    cv::subtract(b_channel,cv::Scalar(b_mean),b_channel);
+
+    cv::add(saliency_map,l_channel.mul(l_channel),saliency_map);
+    cv::add(saliency_map,a_channel.mul(a_channel),saliency_map);
+    cv::add(saliency_map,b_channel.mul(b_channel),saliency_map);
+
+    CaptureFrame output(saliency_map,"Saliency Weight");
+    return output;
+
+}
+
+CaptureFrame Algorithm::exposedness(CaptureFrame input_image)
+{
+    double average = 0.5;
+    cv::Mat temp = input_image.retrieve_image().clone();
+    cv::Mat greyscale_image(temp.rows,temp.cols,CV_8UC1);
+    cv::cvtColor( temp, greyscale_image, CV_BGR2GRAY );
+    // cv::imshow("greysnksn",greyscale_image);
+    // cv::waitKey(0);
+    cv::Mat expo = cv::Mat::zeros(greyscale_image.rows,greyscale_image.cols,CV_32FC1);
+    for(int i = 0 ; i < expo.rows; i++)
+    {
+        for(int j = 0 ; j < greyscale_image.cols; j++)
+        {
+            double data = std::exp(std::pow(-(1.0 * greyscale_image.at<float>(i,j)) - average ,2.0)/(2 * 0.0625));
+            expo.at<float>(i,j) = (float)data;
+        }
+    }
+    expo.convertTo(expo,CV_8UC1);
+    CaptureFrame output(expo,"Exposedness");
+    return output;
+}
+
 
 //Akaze feature points identification
 void Algorithm::AKAZE_feature_points(CaptureFrame image1, CaptureFrame image2)

@@ -37,14 +37,20 @@ class Algorithm
 
     //Image Enhancing
 
-     //CLAHE based basic dehazing algorithm
+    //CLAHE based basic dehazing algorithm
     CaptureFrame CLAHE_dehaze(CaptureFrame input_image);
-     //CLAHE based basic dehazing algorithm
+    //CLAHE based basic dehazing algorithm
     cv::Mat CLAHE_dehaze(cv::Mat input_image);
     // histogram equilization algorithm
     CaptureFrame hist_equalize(CaptureFrame input_image);
     //support function for CLAHE dehazing
     void set_CLAHE_clip_limit(int clip_limit);
+    CaptureFrame balance_white(CaptureFrame input);
+    void balance_white(cv::Mat input);
+    CaptureFrame laplacian_contrast(CaptureFrame input);
+    CaptureFrame local_contrast(CaptureFrame input);
+    CaptureFrame saliency_contrast(CaptureFrame input);
+    CaptureFrame exposedness(CaptureFrame input);
 
     // //Image Mosaicing
 

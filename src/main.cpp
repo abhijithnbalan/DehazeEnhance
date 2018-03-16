@@ -23,11 +23,12 @@ int main(int argc, char **argv) //The main Function
     } 
     DehazeEnhance de_en;
     CaptureFrame input_image;
-    logger.log_warn("nput image is tis");
+    logger.log_warn("input image is loaded");
     input_image.capture_image(argv[1],"Input Image");
     // mosaic.use_dehaze = true;
     logger.log_warn("application start");
-    de_en.application(input_image);
+    // de_en.dark_channel_prior(input_image);
+    de_en.fusion(input_image);
     input_image.clear();
 
     return 0;

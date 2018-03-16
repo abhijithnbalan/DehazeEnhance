@@ -11,17 +11,20 @@ class DehazeEnhance : public ImageProcessing
         ViewFrame viewer;
         Logger logger;
         cv::Point max_intensity_point;
-        CaptureFrame airlight_image;
+        CaptureFrame airlight_image,airlight_color;
         cv::Vec3b background_light;
-        CaptureFrame red_transmission,green_transmission,blue_transmission;
+        CaptureFrame red_transmission,green_transmission,blue_transmission,recovered_image;
+        cv::Scalar background_color;
+
+        CaptureFrame white_balanced_image;
 
     protected:
 
     public:
         CaptureFrame original_image,dark_channel,en_CLAHE,en_HE,saturation,u_darkchannel;
-        int airlight;
-        void application(CaptureFrame input);
-        void show_airlight(CaptureFrame input_image);
+        void dark_channel_prior(CaptureFrame input);
+        void fusion(CaptureFrame input);
+        CaptureFrame show_airlight(CaptureFrame input_image);
         int find_airlight(CaptureFrame dark_channel,CaptureFrame saturation);
         CaptureFrame find_airlight(CaptureFrame input,int radius);
         void find_transmission(CaptureFrame image);
