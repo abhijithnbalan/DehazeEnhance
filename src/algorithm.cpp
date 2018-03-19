@@ -313,16 +313,37 @@ CaptureFrame Algorithm::exposedness(CaptureFrame input_image)
     cv::cvtColor( temp, greyscale_image, CV_BGR2GRAY );
     // cv::imshow("greysnksn",greyscale_image);
     // cv::waitKey(0);
+    greyscale_image.convertTo(greyscale_image,CV_32FC1,1.0/255.0,0);
+    // cv::imshow("greysnksn",greyscale_image);
+    // cv::waitKey(0);
+    double data = 0;
     cv::Mat expo = cv::Mat::zeros(greyscale_image.rows,greyscale_image.cols,CV_32FC1);
     for(int i = 0 ; i < expo.rows; i++)
     {
-        for(int j = 0 ; j < greyscale_image.cols; j++)
+        for(int j = 0 ; j < expo.cols; j++)
         {
-            double data = std::exp(std::pow(-(1.0 * greyscale_image.at<float>(i,j)) - average ,2.0)/(2 * 0.0625));
-            expo.at<float>(i,j) = (float)data;
+            data = std::exp(std::pow(-1.0 * greyscale_image.at<float>(i,j) - average ,2.0)/(2 * 0.0625));
+            expo.at<float>(i,j) = data;
         }
     }
-    expo.convertTo(expo,CV_8UC1);
+    
+
+    // cv::Mat temp1,temp2,temp3;
+    // cv::add(greyscale_image,cv::Scalar(average),temp1);
+    // cv::pow(temp1,2,temp2);    
+    // cv::divide(temp2,cv::Scalar(0.125),temp3);
+    // cv::exp(temp3,temp3);
+    // temp1.convertTo(temp1,CV_32FC1,1.0/255.0,0);
+    // temp2.convertTo(temp2,CV_32FC1,1.0/255.0,0);
+    // temp3.convertTo(temp3,CV_32FC1,1.0/255.0,0);
+    // cv::imshow("thenga",temp1);
+    // cv::waitKey(0);
+    // cv::imshow("kola",temp2);
+    // cv::waitKey(0);
+    // cv::imshow("managa",temp3);
+    // cv::waitKey(0);
+
+    expo.convertTo(expo,CV_32FC1,1.0/255.0,0);
     CaptureFrame output(expo,"Exposedness");
     return output;
 }
