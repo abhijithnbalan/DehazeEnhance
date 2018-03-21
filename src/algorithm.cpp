@@ -145,45 +145,6 @@ CaptureFrame Algorithm::u_dark_channel(CaptureFrame input_image, int radius)
     return output;
 }
 
-CaptureFrame Algorithm::local_contrast(CaptureFrame input_image)
-{
-    const float pi = 3.141592;
-    cv::Mat temp = input_image.retrieve_image().clone();
-    cv::Mat greyscale_image(temp.rows,temp.cols,CV_8UC1);
-    cv::cvtColor( temp, greyscale_image, CV_BGR2GRAY );
-    cv::imshow("sdfjds",greyscale_image);
-    cv::waitKey(0);
-    float h[] = {1.0/16.0 , 4.0/16.0 , 6.0/16.0 , 4.0/16.0 , 1.0/16.0 };
-    int length = sizeof(h)/sizeof(*h);
-    cv::Mat mask(length,length,CV_32FC1);
-    for(int i = 0 ; i < length ; i++)
-    {
-        for(int j = 0 ; j < length ; j++)
-        {
-            mask.at<float>(i,j) = h[i] * h[j];
-            // std::cout<<h[i]<<"\t"<<h[j]<<"\n";
-        }        
-    }
-    // std::cout<<mask;
-    // std::cout<<length;
-    cv::Mat local_contrast_image;
-    greyscale_image.convertTo(greyscale_image,CV_32FC1);
-    
-    cv::filter2D(greyscale_image,local_contrast_image,mask.depth(),mask);
-    // for(int i = 0; i < local_contrast_image.rows ; i++)
-    // {
-    //     for(int j = 0; j < local_contrast_image.cols ; j++)
-    //     {
-    //         if(local_contrast_image.at<float>(i,j) < pi/2.75)
-    //         local_contrast_image.at<float>(i,j) = pi/2.75;
-    //     }
-    // }
-    // cv::subtract(greyscale_image,local_contrast_image,local_contrast_image);
-    // local_contrast_image.convertTo(local_contrast_image,CV_8UC3);
-    CaptureFrame output(local_contrast_image,"Local Contrast");
-    return output;
-}
-
 CaptureFrame Algorithm::saturation_map(CaptureFrame input_image, int radius)
 {
     cv::Mat temp = input_image.retrieve_image().clone();
@@ -264,14 +225,60 @@ CaptureFrame Algorithm::laplacian_contrast(CaptureFrame input_image)
 {
     cv::Mat temp = input_image.retrieve_image().clone();
     cv::Mat laplacian;
+    
     cv::Mat greyscale_image(temp.rows,temp.cols,CV_8UC1);
     cv::cvtColor( temp, greyscale_image, CV_BGR2GRAY );
 
-    cv::Laplacian(temp,laplacian,CV_16SC3);
-    laplacian.convertTo(laplacian,CV_8UC1);
+    cv::Laplacian(temp,laplacian,CV_16S);
+    
     // cv::imshow("laplacian contrast",laplacian);
     // cv::waitKey(0);
-    CaptureFrame output(laplacian,"Laplacian Constrast");
+    // cv::convertScaleAbs(laplacian,laplacian);
+    cv::Mat out(laplacian.rows,laplacian.cols,CV_32FC1);
+    std::vector<cv::Mat> channels;
+    cv::split(laplacian,channels);
+    out = channels[2];
+    // std::cout<<out.type();
+    out.convertTo(out,CV_8UC1);
+    
+    CaptureFrame output(out,"Laplacian Constrast");
+    return output;
+}
+
+CaptureFrame Algorithm::local_contrast(CaptureFrame input_image)
+{
+    const float pi = 3.141592;
+    cv::Mat temp = input_image.retrieve_image().clone();
+    cv::Mat greyscale_image(temp.rows,temp.cols,CV_8UC1);
+    cv::cvtColor( temp, greyscale_image, CV_BGR2GRAY );
+    float h[] = {1.0/16.0 , 4.0/16.0 , 6.0/16.0 , 4.0/16.0 , 1.0/16.0 };
+    int length = sizeof(h)/sizeof(*h);
+    cv::Mat mask(length,length,CV_32FC1);
+    for(int i = 0 ; i < length ; i++)
+    {
+        for(int j = 0 ; j < length ; j++)
+        {
+            mask.at<float>(i,j) = h[i] * h[j];
+            // std::cout<<h[i]<<"\t"<<h[j]<<"\n";
+        }        
+    }
+    // std::cout<<mask;
+    // std::cout<<length;
+    cv::Mat local_contrast_image;
+    greyscale_image.convertTo(greyscale_image,CV_32FC1);
+    
+    cv::filter2D(greyscale_image,local_contrast_image,mask.depth(),mask);
+    for(int i = 0; i < local_contrast_image.rows ; i++)
+    {
+        for(int j = 0; j < local_contrast_image.cols ; j++)
+        {
+            if(local_contrast_image.at<float>(i,j) < pi/2.75)
+            local_contrast_image.at<float>(i,j) = pi/2.75;
+        }
+    }
+    // cv::subtract(greyscale_image,local_contrast_image,local_contrast_image);
+    local_contrast_image.convertTo(local_contrast_image,CV_8UC1);
+    CaptureFrame output(local_contrast_image,"Local Contrast");
     return output;
 }
 
@@ -300,6 +307,7 @@ CaptureFrame Algorithm::saliency_contrast(CaptureFrame input_image)
     cv::add(saliency_map,a_channel.mul(a_channel),saliency_map);
     cv::add(saliency_map,b_channel.mul(b_channel),saliency_map);
 
+    saliency_map.convertTo(saliency_map,CV_8UC1);
     CaptureFrame output(saliency_map,"Saliency Weight");
     return output;
 
@@ -343,11 +351,11 @@ CaptureFrame Algorithm::exposedness(CaptureFrame input_image)
     // cv::imshow("managa",temp3);
     // cv::waitKey(0);
 
-    expo.convertTo(expo,CV_32FC1,1.0/255.0,0);
+    // expo.convertTo(expo,CV_32FC1,1.0/255.0,0);
+    expo.convertTo(expo,CV_8UC1);
     CaptureFrame output(expo,"Exposedness");
     return output;
 }
-
 
 //Akaze feature points identification
 void Algorithm::AKAZE_feature_points(CaptureFrame image1, CaptureFrame image2)
@@ -432,4 +440,72 @@ CaptureFrame Algorithm::red_irradiance(CaptureFrame input_image,int radius)
     CaptureFrame output(red_channel,"depth map");
     return output;
 
+}
+
+std::vector<cv::Mat> Algorithm::gaussion_pyrdown(CaptureFrame input, int levels)
+{
+    cv::Mat temp = input.retrieve_image().clone();
+    cv::Mat pyr_image;
+    std::vector<cv::Mat> pyramids;
+    pyramids.push_back(temp);
+    for(int i = 1; i < levels ; i++)
+    {
+        cv::pyrDown(temp,pyr_image,cv::Size(temp.cols/2,temp.rows/2));
+        pyramids.push_back(pyr_image);
+        temp = pyr_image.clone();
+        // cv::imshow("pyramid",temp);
+        // cv::waitKey(0);
+    }
+    return pyramids;
+}
+
+std::vector<cv::Mat> Algorithm::laplacian_pyrdown(CaptureFrame input, int levels)
+{
+    cv::Mat temp = input.retrieve_image().clone();
+    
+    std::vector<cv::Mat> pyramids;
+    pyramids = laplacian_pyrdown(temp,levels);
+
+    return pyramids;
+}
+
+std::vector<cv::Mat> Algorithm::laplacian_pyrdown(cv::Mat temp, int levels)
+{
+    cv::Mat pyr_image;
+    std::vector<cv::Mat> pyramids;
+    pyramids.push_back(temp);
+    for(int i = 1; i < levels ; i++)
+    {
+        cv::pyrDown(temp,pyr_image,cv::Size(temp.cols/2,temp.rows/2));
+        pyramids.push_back(pyr_image);
+        temp = pyr_image.clone();
+        // cv::imshow("pyramid",temp);
+        // cv::waitKey(0);
+    }
+    for(int i = 0; i < levels - 1 ; i++)
+    {
+        cv::Mat tmpyr;
+        cv::pyrUp(pyramids[i + 1],tmpyr,pyramids[i].size());
+        cv::subtract(pyramids[i],tmpyr,pyramids[i]);
+        // cv::imshow("pyramid",pyramids[i]);
+        // cv::waitKey(0);
+    }
+
+    return pyramids;
+}
+
+CaptureFrame Algorithm::pyr_reconstruct(std::vector<cv::Mat> pyramids,int levels)
+{
+    // int levels = pyramids.length();
+    for(int i = levels-1; i > 0; i--)
+    {
+        cv::Mat tempyr;
+        cv::pyrUp(pyramids[i],tempyr,pyramids[i-1].size());
+        cv::add(pyramids[i - 1],tempyr,pyramids[i - 1]);
+    }
+    // cv::imshow("reconpyr",pyramids[0]);
+    // cv::waitKey(0);
+    CaptureFrame output(pyramids[0],"Reconstructed pyramid");
+
+    return output;
 }

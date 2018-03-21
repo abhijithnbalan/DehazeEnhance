@@ -14,7 +14,6 @@ int main(int argc, char **argv) //The main Function
     logger.log_debug("Working directory switched to one directory back");
    
     //Changing directory for accessing files. another workaround is giving full path for each files.
-    std::cout<<success<<std::endl;
     if(success != 0)
     {
         logger.log_error("Unable to change working directory");
@@ -23,10 +22,9 @@ int main(int argc, char **argv) //The main Function
     } 
     DehazeEnhance de_en;
     CaptureFrame input_image;
-    logger.log_warn("input image is loaded");
     input_image.capture_image(argv[1],"Input Image");
     // mosaic.use_dehaze = true;
-    logger.log_warn("application start");
+    logger.log_warn("application started");
     // de_en.dark_channel_prior(input_image);
     de_en.fusion(input_image);
     input_image.clear();

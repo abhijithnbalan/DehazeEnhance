@@ -15,8 +15,12 @@ class DehazeEnhance : public ImageProcessing
         cv::Vec3b background_light;
         CaptureFrame red_transmission,green_transmission,blue_transmission,recovered_image;
         cv::Scalar background_color;
-
+        CaptureFrame laplacian_contrast_1,local_contrast_1,saliency_contrast_1,exposedness_1;
+        CaptureFrame laplacian_contrast_2,local_contrast_2,saliency_contrast_2,exposedness_2;
         CaptureFrame white_balanced_image;
+        cv::Mat total_weight_white , total_weight_contrast;
+
+        CaptureFrame laplace_fusion,local_fusion,saliency_fusion,exposedness_fusion;
 
     protected:
 
@@ -29,6 +33,9 @@ class DehazeEnhance : public ImageProcessing
         CaptureFrame find_airlight(CaptureFrame input,int radius);
         void find_transmission(CaptureFrame image);
         CaptureFrame recover_image(CaptureFrame input_image);
+        void normalize_weights();
+        CaptureFrame fusion_blender();
+        CaptureFrame pyramid_fusion();
 
 
 };

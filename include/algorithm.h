@@ -52,6 +52,13 @@ class Algorithm
     CaptureFrame saliency_contrast(CaptureFrame input);
     CaptureFrame exposedness(CaptureFrame input);
 
+    std::vector<cv::Mat> gaussion_pyrdown(CaptureFrame image, int level);
+    std::vector<cv::Mat> laplacian_pyrdown(CaptureFrame image, int level);
+    std::vector<cv::Mat> laplacian_pyrdown(cv::Mat image, int level);
+    CaptureFrame pyr_reconstruct(std::vector<cv::Mat> input,int levels);
+    
+    
+
     // //Image Mosaicing
 
     //Akaze keypoint creation with discription
