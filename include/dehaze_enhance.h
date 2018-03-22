@@ -29,7 +29,7 @@ class DehazeEnhance : public ImageProcessing
         void dark_channel_prior(CaptureFrame input);
         void fusion(CaptureFrame input);
         CaptureFrame show_airlight(CaptureFrame input_image);
-        int find_airlight(CaptureFrame dark_channel,CaptureFrame saturation);
+        CaptureFrame find_airlight(CaptureFrame dark_channel,CaptureFrame saturation);
         CaptureFrame find_airlight(CaptureFrame input,int radius);
         void find_transmission(CaptureFrame image);
         CaptureFrame recover_image(CaptureFrame input_image);

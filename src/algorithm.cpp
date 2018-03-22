@@ -435,9 +435,11 @@ CaptureFrame Algorithm::red_irradiance(CaptureFrame input_image,int radius)
     std::vector<cv::Mat> channels;
     cv::split(temp,channels);
     cv::Mat red_channel = channels[2].clone();
-    // cv::imshow("red channel",red_channel);
-    // cv::waitKey(0)
-    CaptureFrame output(red_channel,"depth map");
+    cv::blur(red_channel,red_channel,cv::Size(5,5));
+    cv::Mat color_map;
+    cv::equalizeHist(red_channel,red_channel);
+    cv::applyColorMap(red_channel,color_map, cv::COLORMAP_JET);
+    CaptureFrame output(color_map,"depth map");
     return output;
 
 }

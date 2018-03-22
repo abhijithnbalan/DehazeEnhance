@@ -1,85 +1,147 @@
-
+//Standard includes
+#include <opencv2/opencv.hpp>
+//User defined includes
 #include "dehaze_enhance.h"
 #include "capture_frame.h"
 #include "logger.h"
 #include "view_frame.h"
-#include <opencv2/opencv.hpp>
 
-void DehazeEnhance::dark_channel_prior(CaptureFrame input)
+void DehazeEnhance::dark_channel_prior(CaptureFrame input)//Dark channel prior method.
 {
-    original_image = input;
-    CaptureFrame depth_map;
-    // en_HE = algo.hist_equalize(input);
-    en_CLAHE = algo.CLAHE_dehaze(input);
-    // logger.log_warn("CLAHE");
-    depth_map = algo.red_irradiance(input,4);
-    // dark_channel = algo.dark_channel(input,5);
-    saturation = algo.saturation_map(input,5);
-    // u_darkchannel = algo.u_dark_channel(input,5);
-    dark_channel = find_airlight(input, 5);
-    // int t = find_airlight(dark_channel,saturation);
-    // dark_chnnel = find_airlight(en_CLAHE,5);
-    airlight_image = show_airlight(input);
-    logger.log_warn("viewing");
-    // viewer.multiple_view_interrupted(input,dark_channel,saturation,depth_map,50);
-    // viewer.multiple_view_interrupted(airlight_image,airlight_color,75);
-    find_transmission(input);
-    recovered_image = recover_image(input);
-    viewer.multiple_view_interrupted(original_image,dark_channel,recovered_image,en_CLAHE,50);
-    // viewer.multiple_view_interrupted(en_CLAHE,dark_channel,airlight_image,saturation,50);
+    original_image = input;//Keeping a copy of original. Accessible throughout the program.
+    CaptureFrame depth_map;//Depth map obtained from degradation from red channel in the input image.
+    
+    //CONTRAST ENHANCING
+    // en_HE = algo.hist_equalize(input);//Normal Histogram equalization
+    en_CLAHE = algo.CLAHE_dehaze(input);//CLAHE algorithm
+    logger.log_info("CLAHE filter applied");
+    
+    // DEPTH MAP
+    depth_map = algo.red_irradiance(input,4);//Converting Red channel to color-depth-map.
+    logger.log_info("Depth map generated");
 
-    // viewer.single_view_interrupted(recovered_image,50);
+    //DARK CHANNEL 
+    dark_channel = algo.dark_channel(input,5);//Calculate darkchannel 
+    // u_darkchannel = algo.u_dark_channel(input,5);//UDCP only used green and blue color for darkchannel generation.
+    logger.log_info("Dark Channel image generated");
+
+    //SATURATION MAP
+    saturation = algo.saturation_map(input,5);
+    logger.log_info("Saturation map generated");
+    
+
+    viewer.multiple_view_interrupted(input,dark_channel,saturation,depth_map,50);//Showing all the filter effects.
+
+    //AIRLIGHT ESTIMATION
+    airlight_image = find_airlight(dark_channel,saturation);
+    // dark_chnnel = find_airlight(en_CLAHE,5);
+    // airlight_image = show_airlight(input);
+    viewer.multiple_view_interrupted(airlight_image,airlight_color,75);//Display for airlight estimation
+    logger.log_info("Airlight estimated");
+
+
+    //TRANSMISSION ESTIMATION
+    find_transmission(input);
+    
+    //RECOVERING IMAGE
+    recovered_image = recover_image(input);
+
+    //Resutl
+    viewer.multiple_view_interrupted(original_image,recovered_image,50);//Displaying initial image and final image.
+
     return;
 }
 
-CaptureFrame DehazeEnhance::show_airlight(CaptureFrame input_image)
+CaptureFrame DehazeEnhance::show_airlight(CaptureFrame input_image)//Showing airlight
 {
-    if (max_intensity_point.x + max_intensity_point.y == 0)
+    if (max_intensity_point.x + max_intensity_point.y == 0)//making sure that max_intensity_point has some data
     {
         logger.log_warn("Airlight is not identified before to show");
         return input_image;
     }
     cv::Mat temp = input_image.retrieve_image().clone();
+    //Making a rectangle of side 10 pixel centered at the max_intensity point for displaying.
     cv::rectangle(temp, cv::Point(max_intensity_point.x + 5, max_intensity_point.y + 5), cv::Point(max_intensity_point.x - 5, max_intensity_point.y - 5), cv::Scalar(0, 0, 255), 2, 8, 0);
+    //Returning the rectangle drawn image.
     CaptureFrame output(temp,"airlight");
     return output;
 }
-
-int DehazeEnhance::find_airlight(CaptureFrame dark_channel, CaptureFrame saturaiton)
+CaptureFrame DehazeEnhance::find_airlight(CaptureFrame dark_channel, CaptureFrame saturaiton)//find airlight from dark channel and saturation map
 {
-    cv::MatND hist, norm_hist;
-    cv::Mat temp_dark = dark_channel.retrieve_image().clone();
-    cv::Mat temp_satu = dark_channel.retrieve_image().clone();
-    cv::Mat filtered_satu(temp_satu.rows,temp_satu.cols,CV_8UC1);
-    cv::Mat filtered_dark(temp_dark.rows,temp_dark.cols,CV_8UC1);
-    cv::Mat filtered_common(temp_dark.rows,temp_dark.cols,CV_8UC1);
-    /// Establish the number of bins
-    // int histSize = 256;
+    
+    cv::Mat orig_img = original_image.retrieve_image().clone();//input image is stored 
+    cv::Mat temp_dark = dark_channel.retrieve_image().clone();//darkchannel stored
+    cv::Mat temp_satu = saturation.retrieve_image().clone();//saturation map stored
 
-    /// Set the ranges ( for B,G,R) )
-    // float range[] = {0, 256};
-    // const float *histRange = {range};
+    cv::Mat filtered_satu(temp_satu.rows,temp_satu.cols,CV_32FC1);
+    cv::Mat filtered_dark(temp_dark.rows,temp_dark.cols,CV_32FC1);
+    cv::Mat filtered_common(temp_dark.rows,temp_dark.cols,CV_32FC1);
 
-    // bool uniform = true;
-    // bool accumulate = false;
+    // converting stored images to Float type
+    temp_satu.convertTo(temp_satu,CV_32FC1);
+    temp_dark.convertTo(temp_dark,CV_32FC1);
+    cv::Mat total_threshold(temp_satu.rows,temp_dark.cols,CV_32FC1);//for thresholding to identify airlight
 
-    // cv::calcHist(&temp, 1, 0, cv::Mat(), hist, 1, &histSize, &histRange, uniform, accumulate);
-    // cv::normalize(hist, norm_hist, 0, hist.rows, 32, -1, cv::Mat());
-    cv::equalizeHist(temp_satu,temp_satu);
-    cv::equalizeHist(temp_dark,temp_dark);
-    cv::inRange(temp_satu,cv::Scalar(250),cv::Scalar(255),filtered_satu);
-    cv::inRange(temp_dark,cv::Scalar(250),cv::Scalar(255),filtered_dark);
-    cv::bitwise_and(filtered_satu,filtered_dark,filtered_common);
-    cv::imshow("filter", filtered_common);
-    cv::waitKey(0);
-    return 1;
+    total_threshold = temp_satu * 0.40 + temp_dark * 0.50;//wighted sum of saturation map and darkchannel
+    //Airlight will be having high value on both saturation and darkchannel
+
+    total_threshold.convertTo(total_threshold,CV_8UC1);//converting back to uchar image for applying histogram equalization
+    cv::blur(total_threshold,total_threshold,cv::Size(5,5));//bluring to blend and remove small patches
+
+    cv::equalizeHist(total_threshold,total_threshold);//histogram equalization for filtering out the largest value pixels.
+
+    total_threshold.convertTo(total_threshold,CV_32FC1,1.0/255.0,0);//Converting back to Float type
+ 
+    //filtering according to threshold(chosen as 0.9 to 1)
+    cv::inRange(total_threshold,cv::Scalar(0.9),cv::Scalar(1),filtered_satu);
+
+    //Erode the filtered image to refine the selection
+    int erosion_size = 6;  
+       cv::Mat element = getStructuringElement(cv::MORPH_CROSS,
+              cv::Size(2 * erosion_size + 1, 2 * erosion_size + 1),
+              cv::Point(erosion_size, erosion_size) );
+    cv::erode(filtered_satu,filtered_satu,element,cv::Point(-1,-1),2);//eroding two times
+
+    //Finding the contour with maximum area
+    std::vector<std::vector<cv::Point> > contours;
+    std::vector<cv::Vec4i> hierarchy;        
+    cv::findContours(filtered_satu,contours,hierarchy,CV_RETR_LIST,CV_CHAIN_APPROX_NONE);
+    double largest_area = 0;
+    int index = 0;
+    for (int i = 0; i < contours.size(); i++) // iterate through each contour.
+    {
+        double a = contourArea(contours[i], false); //  Find the area of contour
+        if (a > largest_area)
+        {
+            largest_area = a;
+            index = i; //Store the index of largest contour
+        }
+    }
+    cv::Rect bounding_rect;
+    bounding_rect = cv::boundingRect(contours[index]);//Creating bounding rectangle for the largest contour
+    cv::rectangle(orig_img, bounding_rect, cv::Scalar(0,255,0),1, 8,0);//Drawing the rectangle on the original image saved before
+   
+    //loading data to max_intensity_point and identifying the airlight color
+    max_intensity_point.x = bounding_rect.x + bounding_rect.width/2;
+    max_intensity_point.y = bounding_rect.y + bounding_rect.height/2;
+    background_light = orig_img.at<cv::Vec3b>(max_intensity_point.y, max_intensity_point.x);
+    background_color = cv::Scalar((float)background_light.val[0],(float)background_light.val[1],(float)background_light.val[2]);
+    
+    //Reloading images and returning the airlight identified image back.
+    cv::Mat temp_color(orig_img.rows,orig_img.cols,CV_32FC3,background_color);
+    airlight_color.reload_image(temp_color,"Background color");
+    CaptureFrame output(orig_img,"airlight mark");
+    logger.log_info("Airlight estimated");
+    return output;
 }
 
-CaptureFrame DehazeEnhance::find_airlight(CaptureFrame input_image, int radius)
+CaptureFrame DehazeEnhance::find_airlight(CaptureFrame input_image, int radius)//find airlight with input image(dark channel identification included)
 {
-    cv::Mat temp = input_image.retrieve_image().clone();
+    cv::Mat temp = input_image.retrieve_image().clone();//Storing input
     cv::Mat dark = cv::Mat::zeros(temp.size(), CV_8UC1);
-    cv::GaussianBlur(temp, temp, cv::Size(5, 5), 1, 1, 4);
+    cv::GaussianBlur(temp, temp, cv::Size(5, 5), 1, 1, 4);//blurring input for blending the colors slightly
+    
+    //Calculating darkchannel and at the same time, finding the maximum value
     int width = temp.cols;
     int height = temp.rows;
     int min_background_light = 0;
@@ -113,7 +175,7 @@ CaptureFrame DehazeEnhance::find_airlight(CaptureFrame input_image, int radius)
                         min = cur;
                 }
             }
-            dark.at<uchar>(row, col) = min;
+            dark.at<uchar>(row, col) = min;//Finding the maximum value
             if (max_intensity < min)
             {
                 max_intensity = min;
@@ -122,168 +184,126 @@ CaptureFrame DehazeEnhance::find_airlight(CaptureFrame input_image, int radius)
             }
         }
     }
-    background_light = temp.at<cv::Vec3b>(max_intensity_point.y, max_intensity_point.x);
-    std::cout << (int)background_light.val[0] << "\n"
-              << (int)background_light.val[1] << "\n"
-              << (int)background_light.val[2] << "\n";
+    background_light = temp.at<cv::Vec3b>(max_intensity_point.y, max_intensity_point.x);//storing the background light 
     
-    background_color = cv::Scalar((float)background_light.val[0],(float)background_light.val[1],(float)background_light.val[2]);
+    background_color = cv::Scalar((float)background_light.val[0],(float)background_light.val[1],(float)background_light.val[2]);//Identifying the color
+    
+    //loading the color 
     cv::Mat temp_color(temp.rows,temp.cols,CV_32FC3,background_color);
     airlight_color.reload_image(temp_color,"Background color");
-
-
-
     temp.release();
+
+    //Returning the darkchannel
     CaptureFrame output(dark, "DarkChannel");
     return output;
 }
 
-void DehazeEnhance::find_transmission(CaptureFrame input_image)
+void DehazeEnhance::find_transmission(CaptureFrame input_image)//Find transmission 
 {
-    cv::Mat temp = dark_channel.retrieve_image().clone();
-    // std::vector<cv::Mat> channels;
-    // cv::split(temp_c,channels);
-    // cv::Mat temp = channels[2].clone();
+    cv::Mat temp = dark_channel.retrieve_image().clone();//dark channel will be used for transmission 
+
+    //Float type mat are used 
+    cv::Mat red_tra(temp.rows,temp.cols,CV_32FC1);
+    cv::Mat blue_tra(temp.rows,temp.cols,CV_32FC1);
+    cv::Mat green_tra(temp.rows,temp.cols,CV_32FC1);
+
+    //Dark channel is converted to Float for consistancy
     temp.convertTo(temp, CV_32FC1);
+
+    //Finding transmission map for red channel
     cv::Mat unity(temp.rows, temp.cols, CV_32FC1, cv::Scalar(1));
-    cv::Mat temp_recovered = temp/(float)background_light.val[2];
-    // temp_recovered.convertTo(temp, CV_8UC1);
-    double min, max;
-    // cv::imshow("reduced image",temp_recovered);
-    // cv::waitKey(0);
-    cv::minMaxLoc(temp_recovered, &min, &max);
-    std::cout<<min<<"\n"<<max<<"\n";
-    cv::Mat red_tra = unity - temp_recovered;
-    cv::minMaxLoc(red_tra, &min, &max);
-    std::cout<<min<<"\n"<<max<<"\n";
+    cv::Mat temp_recovered(temp.rows,temp.cols,CV_32FC1);
+    cv::divide(temp,cv::Scalar((float)background_light.val[2]),temp_recovered);
+    temp_recovered.convertTo(temp, CV_32FC1,1.0/255.0,0);
+    red_tra = unity - temp_recovered;
 
-    // cv::Mat for_view = red_tra * 255;
-    // cv::imshow("sdfadsf",for_view);
-    // cv::waitKey(0);
-
-    
-    // CaptureFrame dark_pic = algo.dark_channel(transmission_airlight,5);
-
-    // std::cout << temp.rows << "\n"
-    //           << temp.cols << "\n"
-    //           << unity.rows << "\n"
-    //           << unity.cols << "\n"
-    //    equalizeHist(red_tra,red_tra);
-    int attenuation_coefficient_blue = 1.20777 * ((int)background_light.val[2]) / ((int)background_light.val[0]);
-    int attenuation_coefficient_green = 1.09777 * ((int)background_light.val[2]) / ((int)background_light.val[1]);
-    cv::Mat blue_tra;
-    cv::Mat green_tra;
+    //Calculating trasnsmission map for other colors from red channel transmission map by attenuation coefficients
+    int attenuation_coefficient_blue = 1.20777 * ((float)background_light.val[2]) / ((float)background_light.val[0]);
+    int attenuation_coefficient_green = 1.09777 * ((float)background_light.val[2]) / ((float)background_light.val[1]);
     cv::pow(red_tra, attenuation_coefficient_blue, blue_tra);
     cv::pow(red_tra, attenuation_coefficient_green, green_tra);
-    // red_tra.convertTo(red_tra, CV_8UC1);
-    // blue_tra.convertTo(blue_tra, CV_8UC1);
-    // green_tra.convertTo(green_tra, CV_8UC1);
+  
+    //Loading the transmission to global variables
     red_transmission.reload_image(red_tra, "Transmisison for red channel");
     blue_transmission.reload_image(blue_tra, "Transmisison for blue channel");
     green_transmission.reload_image(green_tra, "Transmisison for green channel");
-    //    std::cout<<red_tra.type()<<"\n"<<blue_tra.type()<<"\n"<<green_tra.type()<<"\n";
-    // cv::minMaxLoc(red_tra, &min, &max);
-    // std::cout<<min<<"\n"<<max<<"\n";
-    logger.log_warn("transmission successful");
+
+    logger.log_info("Transmission map generated");
     return;
 }
 
-CaptureFrame DehazeEnhance::recover_image(CaptureFrame input_image)
+CaptureFrame DehazeEnhance::recover_image(CaptureFrame input_image)//Recovering image
 {
     cv::Mat temp,transmission_div,recovered,tot_transmission;
     temp = input_image.retrieve_image().clone();
-     double min, max;
-    std::vector<cv::Mat> ch;
+
+    temp.convertTo(temp,CV_32FC3);
     cv::Mat airlight_sub(temp.rows,temp.cols,CV_32FC3,cv::Scalar(0,0,0));
-    cv::Mat tempooo,airlight;
-    airlight = airlight_color.retrieve_image();
-    airlight.convertTo(tempooo,CV_8UC3);
-    // cv::imshow("air color",tempooo);
+    cv::Mat airlight;
+    airlight = airlight_color.retrieve_image();//Retrieving the airlight color
+
     recovered = temp.clone();
-    // cv::waitKey(0);
-    temp.convertTo(temp, CV_32FC3);
+
+    //Creating complete transmission map as a 3 channel image
+    std::vector<cv::Mat> ch;
     ch.push_back(blue_transmission.retrieve_image());
-    
     ch.push_back(green_transmission.retrieve_image());
     ch.push_back(red_transmission.retrieve_image());
     cv::merge(ch,tot_transmission);
 
+    //FIRST step of Recovering, removing backlight from the whole image.
     airlight_sub = temp - airlight;
-
-    // cv::imshow("air",airlight_sub);
-    // cv::waitKey(0);
-    cv::Mat toview = airlight_sub+airlight;
-    // toview.convertTo(toview,CV_32FC3);
-    // cv::imshow("ckeck",toview);
-    // cv::waitKey(0);
-    // airlight_sub.convertTo(airlight_sub, CV_32FC3);
-    // cv::divide(airlight_sub,tot_transmission,transmission_div,-1);
+ 
     std::vector<cv::Mat> reco_channels,channels;
     cv::split(recovered,reco_channels);
     cv::split(airlight_sub,channels);
     cv::Mat blue_trans;
     cv::Mat red_trans;
     cv::Mat green_trans;
-    cv::Mat max_transmission(blue_transmission.retrieve_image().rows,blue_transmission.retrieve_image().cols,CV_32FC1,cv::Scalar(0.1));
     
+    //
+    cv::Mat max_transmission(blue_transmission.retrieve_image().rows,blue_transmission.retrieve_image().cols,CV_32FC1,cv::Scalar(0.1));
     cv::max(blue_transmission.retrieve_image(),max_transmission,blue_trans);
     cv::max(green_transmission.retrieve_image(),max_transmission,green_trans);
     cv::max(red_transmission.retrieve_image(),max_transmission,red_trans);
     
-    reco_channels[0] = 0.9 * channels[0]/blue_trans;
-    reco_channels[1] = 0.9 * channels[1]/green_trans;
-    reco_channels[2] = 0.9 * channels[2]/red_trans;
-    cv::GaussianBlur(reco_channels[0],reco_channels[0],cv::Size(5,5), 0, 0, cv::BORDER_DEFAULT);
-    cv::GaussianBlur(reco_channels[1],reco_channels[1],cv::Size(5,5), 0, 0, cv::BORDER_DEFAULT);
-    cv::GaussianBlur(reco_channels[2],reco_channels[2],cv::Size(5,5), 0, 0, cv::BORDER_DEFAULT);
-    cv::minMaxLoc(channels[0], &min, &max);
-    std::cout<<min<<"\n"<<max<<"\n";
+    //SECOND step, dividing by transmission map for each channel
+    reco_channels[0] = channels[0]/blue_trans;
+    reco_channels[1] = channels[1]/green_trans;
+    reco_channels[2] = channels[2]/red_trans;
     cv::merge(reco_channels,transmission_div);
-    // transmission_div.convertTo(transmission_div, CV_8UC3);
-    // cv::imshow("div",tot_transmission);
-    // cv::imshow("div",transmission_div);
-    // cv::waitKey(0);
+
+    //THIRD step, adding the background light back;
     recovered = transmission_div + airlight;  
     
+    //Converting back the image to uchar type and returning the recovered image
     recovered.convertTo(recovered, CV_8UC3);
-    // // recovered = algo.CLAHE_dehaze(recovered);
-    // std::vector<cv::Mat> reco_channels,channels;
-    // cv::split(recovered,reco_channels);
-    // cv::split(temp,channels);
-    // for(int row = 0;row < temp.rows;row++)
-    // {
-    //     for(int col = 0;col < temp.cols;col++)
-    //     {
-    //         for(int color = 0;color<3;color++)
-    //         { 
-                
-    //             reco_channels[color].at<uchar>(row,col) = (channels[color].at<uchar>(row,col) - (int)background_light[color])/ch[color].at<float>(row,col) + (int)background_light[color];
-    //         }
-    //     }
-    // }
-    // cv::merge(reco_channels,recovered);
-    CaptureFrame output(recovered,"The recovered image");
-    // cv::imshow("Recovered",recovered);
-    // cv::waitKey(0);
+    CaptureFrame output(recovered,"Recovered image");
     return output;
 }
-void DehazeEnhance::fusion(CaptureFrame input)
+
+void DehazeEnhance::fusion(CaptureFrame input)//Dehazing by fusion
 {
-    CaptureFrame original(input.retrieve_image().clone(),"original input");
-    // balanceWhite(input.retrieve_image(),white_bal,WHITE_BALANCE_SIMPLE);
-    white_balanced_image = algo.balance_white(input);
-    en_CLAHE = algo.CLAHE_dehaze(original);
-    // en_HE = algo.hist_equalize(original);
-    logger.log_warn("contrasts estimation");
-    laplacian_contrast_1 = algo.laplacian_contrast(white_balanced_image);
+    CaptureFrame original(input.retrieve_image().clone(),"original input");//keeping a copy of the original. Accessible throughout the program
+    
+    //PREPARING INPUTS
+    white_balanced_image = algo.balance_white(input);//White balanced image
+    en_CLAHE = algo.CLAHE_dehaze(original);//Contrast enhanced image
+    // en_HE = algo.hist_equalize(original);//Contrast enhanced image
+    logger.log_warn("Inputs prepared");
+
+    //PREPARING THE WEIGHTS
+    laplacian_contrast_1 = algo.laplacian_contrast(white_balanced_image);//Laplacian contrast weight
     laplacian_contrast_2 = algo.laplacian_contrast(en_CLAHE);
-    local_contrast_1 = algo.local_contrast(white_balanced_image);
+    local_contrast_1 = algo.local_contrast(white_balanced_image);//Local contrast weight
     local_contrast_2 = algo.local_contrast(en_CLAHE);
-    saliency_contrast_1 = algo.saliency_contrast(white_balanced_image);
+    saliency_contrast_1 = algo.saliency_contrast(white_balanced_image);//Saliency weight
     saliency_contrast_2 = algo.saliency_contrast(en_CLAHE);
-    exposedness_1 = algo.exposedness(white_balanced_image);
+    exposedness_1 = algo.exposedness(white_balanced_image);//Exposedness weight
     exposedness_2 = algo.exposedness(en_CLAHE);
-    viewer.multiple_view_interrupted(en_CLAHE,white_balanced_image,50);
+
+
+    viewer.multiple_view_interrupted(en_CLAHE,white_balanced_image,50);//Displaying two inputs used
     viewer.multiple_view_interrupted(laplacian_contrast_1,local_contrast_1,saliency_contrast_1,exposedness_1,50);
     viewer.multiple_view_interrupted(laplacian_contrast_2,local_contrast_2,saliency_contrast_2,exposedness_2,50);
     logger.log_warn("normalize weights");
