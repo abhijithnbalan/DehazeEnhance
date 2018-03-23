@@ -26,6 +26,7 @@ class DehazeEnhance : public ImageProcessing
 
     public:
         CaptureFrame original_image,dark_channel,en_CLAHE,en_HE,saturation,u_darkchannel;
+        CaptureFrame naive_blending,image_fusion,weight_fusion,pyramid_blending;
         void dark_channel_prior(CaptureFrame input);
         void fusion(CaptureFrame input);
         CaptureFrame show_airlight(CaptureFrame input_image);

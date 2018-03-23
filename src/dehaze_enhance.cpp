@@ -304,28 +304,24 @@ void DehazeEnhance::fusion(CaptureFrame input)//Dehazing by fusion
 
 
     viewer.multiple_view_interrupted(en_CLAHE,white_balanced_image,50);//Displaying two inputs used
+    //Displaying weights for both the pictures
     viewer.multiple_view_interrupted(laplacian_contrast_1,local_contrast_1,saliency_contrast_1,exposedness_1,50);
     viewer.multiple_view_interrupted(laplacian_contrast_2,local_contrast_2,saliency_contrast_2,exposedness_2,50);
-    logger.log_warn("normalize weights");
+
     normalize_weights();
-    
-    logger.log_warn("blending together");
+    logger.log_info("Weights Normalized");
 
-    CaptureFrame final_image = pyramid_fusion();
-    // CaptureFrame final_image = fusion_blender();
-
-    // viewer.multiple_view_interrupted(laplace_fusion,local_fusion,saliency_fusion,exposedness_fusion,50);
+    pyramid_blending = pyramid_fusion();
+    // naive_blending = fusion_blender();
+    logger.log_info("Images blended");
     
-    viewer.multiple_view_interrupted(original,final_image,50);
-    // std::vector<cv::Mat> image = algo.gaussion_pyrdown(en_CLAHE,5);
+    viewer.multiple_view_interrupted(original,pyramid_blending,50);//Displaying image before and after
 
-    // std::vector<cv::Mat> imag = algo.laplacian_pyrdown(en_CLAHE,5);
-    
     return;
 }
-void DehazeEnhance::normalize_weights()
+void DehazeEnhance::normalize_weights()//Normalizing weights
 {
-    
+    //Retrieving all the weights.
     cv::Mat laplace_1 = laplacian_contrast_1.retrieve_image().clone();
     cv::Mat laplace_2 = laplacian_contrast_2.retrieve_image().clone();
     cv::Mat local_1 = local_contrast_1.retrieve_image().clone();
@@ -334,7 +330,8 @@ void DehazeEnhance::normalize_weights()
     cv::Mat saliency_2 = saliency_contrast_2.retrieve_image().clone();
     cv::Mat expose_1 = exposedness_1.retrieve_image().clone();
     cv::Mat expose_2 = exposedness_2.retrieve_image().clone();
-
+    
+    //Initializing normalized weights (Float type).
     cv::Mat laplace_normal_1(laplace_1.rows,laplace_1.cols,CV_32FC1);
     cv::Mat laplace_normal_2(laplace_2.rows,laplace_2.cols,CV_32FC1);
     cv::Mat local_normal_1(local_1.rows,local_1.cols,CV_32FC1);
@@ -343,7 +340,8 @@ void DehazeEnhance::normalize_weights()
     cv::Mat saliency_normal_2(saliency_2.rows,saliency_2.cols,CV_32FC1);
     cv::Mat expose_normal_1(expose_1.rows,expose_1.cols,CV_32FC1);
     cv::Mat expose_normal_2(expose_2.rows,expose_2.cols,CV_32FC1);
-   
+
+    //Converting all weights to float and mapping every values from 0 to 1
     laplace_1.convertTo(laplace_1,CV_32FC1,1.0/255.0,0);
     laplace_2.convertTo(laplace_2,CV_32FC1,1.0/255.0,0);
     local_1.convertTo(local_1,CV_32FC1,1.0/255.0,0);
@@ -353,34 +351,41 @@ void DehazeEnhance::normalize_weights()
     expose_1.convertTo(expose_1,CV_32FC1,1.0/255.0,0);
     expose_2.convertTo(expose_2,CV_32FC1,1.0/255.0,0);
 
+    //Normalizing weights for white balanced image
     laplace_normal_1 = laplace_1 / (laplace_2 + laplace_1);
     local_normal_1 = local_1 /(local_2 + local_1);
     saliency_normal_1 = saliency_1 / (saliency_2 + saliency_1);
     expose_normal_1 = expose_1 /( expose_2 + expose_1);
 
+    //Normalizing weights for contrast enhanced image.
     laplace_normal_2 = laplace_2 /( laplace_2 + laplace_1);
     local_normal_2 = local_2 / (local_2 + local_1);
     saliency_normal_2 = saliency_2 / (saliency_2 + saliency_1);
     expose_normal_2 = expose_2 / (expose_2 + expose_1);
     
+    //Loading the normalised weights instead of weights.(for white balanced image)
     laplacian_contrast_1.reload_image(laplace_normal_1,"Normalized weights");
     local_contrast_1.reload_image(local_normal_1,"Normalized weights");
     saliency_contrast_1.reload_image(saliency_normal_1,"Normalized weights");
     exposedness_1.reload_image(expose_normal_1,"Normalized weights");
-
+    
+    //Loading the normalised weights instead of weights.(for contrast enhanced image)
     laplacian_contrast_2.reload_image(laplace_normal_2,"Normalized weights");
     local_contrast_2.reload_image(local_normal_2,"Normalized weights");
     saliency_contrast_2.reload_image(saliency_normal_2,"Normalized weights");
     exposedness_2.reload_image(expose_normal_2,"Normalized weights");
+
     return;
 }
 
-CaptureFrame DehazeEnhance::fusion_blender()
+CaptureFrame DehazeEnhance::fusion_blender()//Fusion blending basic
 {
     cv::Mat fusion_naive , fus_lap,fus_loc,fus_exp,fus_sal;
-    fusion_naive= white_balanced_image.retrieve_image().clone().mul(cv::Scalar(0.6,0.6,0.6)) + en_CLAHE.retrieve_image().clone().mul(cv::Scalar(0.7,0.7,0.7));
-    
 
+    //Naive blending, this is the average of contrast enhanced version and white balanced version.
+    fusion_naive= white_balanced_image.retrieve_image().clone().mul(cv::Scalar(0.6,0.6,0.6)) + en_CLAHE.retrieve_image().clone().mul(cv::Scalar(0.7,0.7,0.7));
+
+    //Preparing input images and channels
     cv::Mat img1 = white_balanced_image.retrieve_image().clone();
     cv::Mat img2 = en_CLAHE.retrieve_image().clone();
     std::vector<cv::Mat> white_channels,contrast_channels,output_channels;
@@ -389,48 +394,57 @@ CaptureFrame DehazeEnhance::fusion_blender()
     cv::split(img2,contrast_channels);
     cv::split(black,output_channels);
     
+    //Checking individual weight effects on the image.
 
+    //Laplacian contrast weights
     cv::Mat lap_1 = laplacian_contrast_1.retrieve_image().clone();
     cv::Mat lap_2 = laplacian_contrast_2.retrieve_image().clone();
-    // cv::GaussianBlur(lap_1,lap_1,cv::Size(5,5),5);
-    // cv::GaussianBlur(lap_2,lap_2,cv::Size(5,5),5);
+    //Applying Laplacinan weights and storing.
     output_channels[0] = white_channels[0].mul(lap_1) + contrast_channels[0].mul(lap_2);
     output_channels[1] = white_channels[1].mul(lap_1) + contrast_channels[1].mul(lap_2);
     output_channels[2] = white_channels[2].mul(lap_1) + contrast_channels[2].mul(lap_2);
     cv::merge(output_channels,fus_lap);
     
+    //Clearing channels and preparing for next weight
     output_channels.clear();
     cv::split(black,output_channels);
 
+    //Local contrast weight
     cv::Mat loc_1 = local_contrast_1.retrieve_image().clone();
     cv::Mat loc_2 = local_contrast_2.retrieve_image().clone();
+    //Applying local contrast weights and storing
     output_channels[0] = white_channels[0].mul(loc_1) + contrast_channels[0].mul(loc_2);
     output_channels[1] = white_channels[1].mul(loc_1) + contrast_channels[1].mul(loc_2);
     output_channels[2] = white_channels[2].mul(loc_1) + contrast_channels[2].mul(loc_2);
     cv::merge(output_channels,fus_loc);
-    ///////////spli channels
+
+    //Clearing channels and preparing for next weight
     output_channels.clear();
     cv::split(black,output_channels);
 
+    //Saliency weight
     cv::Mat sal_1 = saliency_contrast_1.retrieve_image().clone();
     cv::Mat sal_2 = saliency_contrast_2.retrieve_image().clone();
+    //Applying saliency weight and storing
     output_channels[0] = white_channels[0].mul(sal_1) + contrast_channels[0].mul(sal_2);
     output_channels[1] = white_channels[1].mul(sal_1) + contrast_channels[1].mul(sal_2);
     output_channels[2] = white_channels[2].mul(sal_1) + contrast_channels[2].mul(sal_2);
     cv::merge(output_channels,fus_sal);
 
+    //Clearing channels and preparing for next weight
     output_channels.clear();
     cv::split(black,output_channels);
+
+    //Exposedness weights
     cv::Mat exp_1 = exposedness_1.retrieve_image().clone();
     cv::Mat exp_2 = exposedness_2.retrieve_image().clone();
-    cv::GaussianBlur(exp_1,exp_1,cv::Size(5,5),5);
-    cv::GaussianBlur(exp_2,exp_2,cv::Size(5,5),5);
+    //Applying exposedness weight and storing.
     output_channels[0] = white_channels[0].mul(exp_1) + contrast_channels[0].mul(exp_2);
     output_channels[1] = white_channels[1].mul(exp_1) + contrast_channels[1].mul(exp_2);
     output_channels[2] = white_channels[2].mul(exp_1) + contrast_channels[2].mul(exp_2);
     cv::merge(output_channels,fus_exp);
 
-
+    //Converting to Float and loading to global varibales
     fus_lap.convertTo(fus_lap,CV_32FC3);
     fus_loc.convertTo(fus_loc,CV_32FC3);
     fus_sal.convertTo(fus_sal,CV_32FC3);
@@ -440,45 +454,54 @@ CaptureFrame DehazeEnhance::fusion_blender()
     saliency_fusion.reload_image(fus_sal,"saliency weights are used");
     exposedness_fusion.reload_image(fus_exp,"Exposedness weights are used");
 
-    cv::Mat finalfinal = (fus_lap.mul(cv::Scalar(0.3,0.3,0.3)) + fus_loc.mul(cv::Scalar(0.3,0.3,0.3)) + fus_sal.mul(cv::Scalar(0.2,0.2,0.2)) + fus_exp.mul(cv::Scalar(0.2,0.2,0.2)));
-    finalfinal.convertTo(finalfinal,CV_8UC1);
-    cv::imshow("finalfinal",finalfinal);
-    cv::waitKey(0);
+    //Creating final image by adding all the individual images together.
+    cv::Mat addition_of_images = (fus_lap.mul(cv::Scalar(0.3,0.3,0.3)) + fus_loc.mul(cv::Scalar(0.3,0.3,0.3)) + fus_sal.mul(cv::Scalar(0.2,0.2,0.2)) + fus_exp.mul(cv::Scalar(0.2,0.2,0.2)));
+    addition_of_images.convertTo(addition_of_images,CV_8UC1);
+    image_fusion.reload_image(addition_of_images,"Fusion of images");
 
+    //Creating final image by adding all the weights together
     cv::Mat finalweight_1 = (lap_1+loc_1+sal_1+exp_1)/4;
     cv::Mat finalweight_2 = (lap_2+loc_2+sal_2+exp_2)/4;
-    cv::Mat finalfinalfinal;
+    cv::Mat addition_of_weights;
     output_channels[0] = white_channels[0].mul(finalweight_1) + contrast_channels[0].mul(finalweight_2);
     output_channels[1] = white_channels[1].mul(finalweight_1) + contrast_channels[1].mul(finalweight_2);
     output_channels[2] = white_channels[2].mul(finalweight_1) + contrast_channels[2].mul(finalweight_2);
-    cv::merge(output_channels,finalfinalfinal);
-    cv::imshow("foinaflanf",finalfinalfinal);
-    cv::waitKey(0);
-    CaptureFrame output(fusion_naive,"naive blending");
+    cv::merge(output_channels,addition_of_weights);
+    weight_fusion.reload_image(addition_of_weights,"Fusion of weights");
+
+    //Returning the basic blending from the function
+    CaptureFrame output(fusion_naive,"Naive blending");
     return output;
 }
 
-CaptureFrame DehazeEnhance::pyramid_fusion()
+CaptureFrame DehazeEnhance::pyramid_fusion()//Pyramid blending (more advanced)
 {
-    int levels = 5;cv::Mat mahn,manh;
+
+    int levels = 5;//Number of levels for pyramid operation
+
+    //Preparing for final weight
     int no_rows = laplacian_contrast_1.retrieve_image().rows;
     int no_cols = laplacian_contrast_1.retrieve_image().cols;
     cv::Mat TWW(no_rows,no_cols,CV_32FC1);
     cv::Mat TWC(no_rows,no_cols,CV_32FC1);
+    
+    //Computing final weight
     TWW = (laplacian_contrast_1.retrieve_image().clone() + local_contrast_1.retrieve_image().clone() + saliency_contrast_1.retrieve_image().clone() + exposedness_1.retrieve_image().clone())/4;
     TWC = (laplacian_contrast_2.retrieve_image().clone() + local_contrast_2.retrieve_image().clone() + saliency_contrast_2.retrieve_image().clone() + exposedness_2.retrieve_image().clone())/4;
-    
-    
     total_weight_contrast = TWC;
     total_weight_white = TWW;
     
+    //Converting weights into Float and storing
     total_weight_white.convertTo(total_weight_white,CV_32FC1);
     total_weight_contrast.convertTo(total_weight_contrast,CV_32FC1);
     CaptureFrame white_weight(total_weight_white,"Whitebalanced weight");
     CaptureFrame contrast_weight(total_weight_contrast,"Contrast enhanced weight");
+    
+    //Taking Gaussian pyramid for weights
     std::vector<cv::Mat> weight_1 = algo.gaussion_pyrdown(white_weight,levels);
     std::vector<cv::Mat> weight_2 = algo.gaussion_pyrdown(contrast_weight,levels);
 
+    //Retrieving input images and converting them to Float image
     cv::Mat img1 = white_balanced_image.retrieve_image().clone();
     cv::Mat img2 = en_CLAHE.retrieve_image().clone();
     img1.convertTo(img1,CV_32FC3);
@@ -486,23 +509,24 @@ CaptureFrame DehazeEnhance::pyramid_fusion()
    
     std::vector<cv::Mat> channels,b_white,g_white,r_white,b_contrast,g_contrast,r_contrast,fused_image_r,fused_image_g,fused_image_b;
 
+    //Taking Laplace pyrmid for all the three channels
     cv::split(img1,channels);
-
     b_white = algo.laplacian_pyrdown(channels[0],5);
     g_white = algo.laplacian_pyrdown(channels[1],5);
     r_white = algo.laplacian_pyrdown(channels[2],5);
     
+    //Taking Laplace pyramid for all the three channels.
     cv::split(img2,channels);
-
     b_contrast = algo.laplacian_pyrdown(channels[0],5);
     g_contrast = algo.laplacian_pyrdown(channels[1],5);
     r_contrast = algo.laplacian_pyrdown(channels[2],5);
     
-    cv::Mat sum(img1.rows,img1.cols,CV_32FC1);
+    cv::Mat sum(img1.rows,img1.cols,CV_32FC1);//Initializing sum
     
+    //Fusion of images with weights of all images from all levels of pyramid
     for(int i = 0; i < levels; i++)
     {
-        
+        //Fusing all the channels in all levels
         cv::add(b_white[i].mul(weight_1[i]),b_contrast[i].mul(weight_2[i]),sum);
         fused_image_b.push_back(sum);
         sum.release();
@@ -514,17 +538,21 @@ CaptureFrame DehazeEnhance::pyramid_fusion()
         sum.release();        
     }
     
+    //Reconstructing from pyramid
     CaptureFrame b_channel = algo.pyr_reconstruct(fused_image_b,5);
     CaptureFrame g_channel = algo.pyr_reconstruct(fused_image_g,5);
     CaptureFrame r_channel = algo.pyr_reconstruct(fused_image_r,5);
+
+    //Merging the final output channels to form a single image
     std::vector<cv::Mat> recovered_channels;
     recovered_channels.push_back(b_channel.retrieve_image().clone());
     recovered_channels.push_back(g_channel.retrieve_image().clone());
     recovered_channels.push_back(r_channel.retrieve_image().clone());
-    cv::Mat fusion;
     
+    cv::Mat fusion;
     cv::merge(recovered_channels,fusion);
     fusion.convertTo(fusion,CV_8UC3);
+    //Returning fused image back to function.
     CaptureFrame output(fusion,"Fused image");
     return output;
 }
