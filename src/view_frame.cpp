@@ -114,8 +114,8 @@ void ViewFrame::multiple_view_interrupted(CaptureFrame object1, CaptureFrame obj
     cv::Mat temporary1, temporary2;
     resize(object1.retrieve_image(), temporary1, cv::Size(object1.retrieve_image().cols * percent / 100, object1.retrieve_image().rows * percent / 100));
     resize(object2.retrieve_image(), temporary2, cv::Size(object2.retrieve_image().cols * percent / 100, object2.retrieve_image().rows * percent / 100));
-    CaptureFrame output1(temporary1, object1.window_name +" Resized");
-    CaptureFrame output2(temporary2, object2.window_name +" Resized");
+    CaptureFrame output1(temporary1, object1.window_name);
+    CaptureFrame output2(temporary2, object2.window_name);
     ViewFrame::multiple_view_interrupted(output1, output2);
     return;
 }
@@ -133,9 +133,9 @@ void ViewFrame::multiple_view_interrupted(CaptureFrame object1, CaptureFrame obj
     resize(object1.retrieve_image(), temporary1, cv::Size(object1.retrieve_image().cols * percent / 100, object1.retrieve_image().rows * percent / 100));
     resize(object2.retrieve_image(), temporary2, cv::Size(object2.retrieve_image().cols * percent / 100, object2.retrieve_image().rows * percent / 100));
     resize(object3.retrieve_image(), temporary3, cv::Size(object3.retrieve_image().cols * percent / 100, object3.retrieve_image().rows * percent / 100));
-    CaptureFrame output1(temporary1, object1.window_name +" Resized");
-    CaptureFrame output2(temporary2, object2.window_name +" Resized");
-    CaptureFrame output3(temporary3, object3.window_name +" Resized");
+    CaptureFrame output1(temporary1, object1.window_name);
+    CaptureFrame output2(temporary2, object2.window_name);
+    CaptureFrame output3(temporary3, object3.window_name);
     ViewFrame::multiple_view_interrupted(output1, output2, output3);
     return;
 }

@@ -1,10 +1,11 @@
 
-
+//Including standard headers
+#include <opencv2/opencv.hpp>
+#include <math.h>
+//Inlcuding user defined headers
 #include "algorithm.h"
 #include "logger.h"
 #include "capture_frame.h"
-#include <opencv2/opencv.hpp>
-#include <math.h>
 
 CaptureFrame Algorithm::CLAHE_dehaze(CaptureFrame object) //CLAHE based basic dehazing algorithm
 {

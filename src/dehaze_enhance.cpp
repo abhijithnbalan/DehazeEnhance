@@ -47,7 +47,7 @@ void DehazeEnhance::dark_channel_prior(CaptureFrame input)//Dark channel prior m
     recovered_image = recover_image(input);
 
     //Resutl
-    viewer.multiple_view_interrupted(original_image,recovered_image,50);//Displaying initial image and final image.
+    viewer.multiple_view_interrupted(original_image,recovered_image,75);//Displaying initial image and final image.
 
     return;
 }
@@ -305,8 +305,8 @@ void DehazeEnhance::fusion(CaptureFrame input)//Dehazing by fusion
 
     viewer.multiple_view_interrupted(en_CLAHE,white_balanced_image,50);//Displaying two inputs used
     //Displaying weights for both the pictures
-    viewer.multiple_view_interrupted(laplacian_contrast_1,local_contrast_1,saliency_contrast_1,exposedness_1,50);
-    viewer.multiple_view_interrupted(laplacian_contrast_2,local_contrast_2,saliency_contrast_2,exposedness_2,50);
+    viewer.multiple_view_interrupted(laplacian_contrast_1,local_contrast_1,saliency_contrast_1,exposedness_1,75);
+    viewer.multiple_view_interrupted(laplacian_contrast_2,local_contrast_2,saliency_contrast_2,exposedness_2,75);
 
     normalize_weights();
     logger.log_info("Weights Normalized");
@@ -315,7 +315,7 @@ void DehazeEnhance::fusion(CaptureFrame input)//Dehazing by fusion
     // naive_blending = fusion_blender();
     logger.log_info("Images blended");
     
-    viewer.multiple_view_interrupted(original,pyramid_blending,50);//Displaying image before and after
+    viewer.multiple_view_interrupted(original,pyramid_blending,75);//Displaying image before and after
 
     return;
 }

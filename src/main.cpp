@@ -28,8 +28,8 @@ int main(int argc, char **argv) //The main Function.
     input_image.capture_image(argv[1],"Input Image");//Read image.
     logger.log_debug("Image loaded");
 
-    de_en.dark_channel_prior(input_image);//Enhancing by Dark channel prior method.
-    // de_en.fusion(input_image);//Enhancing by fusion method.
+    // de_en.dark_channel_prior(input_image);//Enhancing by Dark channel prior method.
+    de_en.fusion(input_image);//Enhancing by fusion method.
 
     return 0;
 }
