@@ -14,7 +14,7 @@ class DehazeEnhance : public ImageProcessing
         cv::Point max_intensity_point;
         CaptureFrame airlight_image,airlight_color;
         cv::Vec3b background_light;
-        CaptureFrame red_transmission,green_transmission,blue_transmission,recovered_image;
+        CaptureFrame red_transmission,green_transmission,blue_transmission;
         cv::Scalar background_color;
         CaptureFrame laplacian_contrast_1,local_contrast_1,saliency_contrast_1,exposedness_1;//weights for white balance image
         CaptureFrame laplacian_contrast_2,local_contrast_2,saliency_contrast_2,exposedness_2;//weights for contrast enhanced image
@@ -26,7 +26,7 @@ class DehazeEnhance : public ImageProcessing
 
     public:
         //Publich Variables (used for final display)
-        CaptureFrame original_image,dark_channel,en_CLAHE,en_HE,saturation,u_darkchannel;
+        CaptureFrame original_image,dark_channel,en_CLAHE,en_HE,saturation,u_darkchannel,recovered_image;
         CaptureFrame naive_blending,image_fusion,weight_fusion,pyramid_blending;
         
         //Dark Channel Prior Algorithm

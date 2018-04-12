@@ -36,7 +36,7 @@ void DehazeEnhance::dark_channel_prior(CaptureFrame input)//Dark channel prior m
     airlight_image = find_airlight(dark_channel,saturation);
     // dark_chnnel = find_airlight(en_CLAHE,5);
     // airlight_image = show_airlight(input);
-    viewer.multiple_view_interrupted(airlight_image,airlight_color,75);//Display for airlight estimation
+    viewer.multiple_view_interrupted(airlight_image,airlight_color,50);//Display for airlight estimation
     logger.log_info("Airlight estimated");
 
 
@@ -47,7 +47,7 @@ void DehazeEnhance::dark_channel_prior(CaptureFrame input)//Dark channel prior m
     recovered_image = recover_image(input);
 
     //Resutl
-    viewer.multiple_view_interrupted(original_image,recovered_image,75);//Displaying initial image and final image.
+    viewer.multiple_view_interrupted(original_image,recovered_image,50);//Displaying initial image and final image.
 
     return;
 }
@@ -314,8 +314,8 @@ void DehazeEnhance::fusion(CaptureFrame input)//Dehazing by fusion
     pyramid_blending = pyramid_fusion();
     // naive_blending = fusion_blender();
     logger.log_info("Images blended");
-    
-    viewer.multiple_view_interrupted(original,pyramid_blending,75);//Displaying image before and after
+    recovered_image.reload_image(pyramid_blending.retrieve_image().clone(),"Recovered Image");
+    viewer.multiple_view_interrupted(original,recovered_image,75);//Displaying image before and after
 
     return;
 }

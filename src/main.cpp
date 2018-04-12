@@ -9,6 +9,7 @@
 
 int main(int argc, char **argv) //The main Function.
 {
+    
     int success = chdir("..");//Going back to root directory.(executed from bin).
     Logger logger;//Logger object for main function.
 
@@ -25,11 +26,16 @@ int main(int argc, char **argv) //The main Function.
     DehazeEnhance de_en;//DehazeEnhance object. This will be used for the subsequent operations.
 
     CaptureFrame input_image;//Image container for loading and processing image.
-    input_image.capture_image(argv[1],"Input Image");//Read image.
+    input_image.capture_image(argv[2],"Input Image");//Read image.
     logger.log_debug("Image loaded");
 
+    // if(argv[1] == "dark" || argv[1] == "both")
     // de_en.dark_channel_prior(input_image);//Enhancing by Dark channel prior method.
+
+
+    // if(argv[1] == "fusion" || argv[1] == "both")
     de_en.fusion(input_image);//Enhancing by fusion method.
+
 
     return 0;
 }
