@@ -60,19 +60,17 @@ stdio.h
 string.h
 -
 
-/home/plankton/CodeMax/DehazeEnhance/src/main.cpp
-unistd.h
+/home/plankton/CodeMax/DehazeEnhance/src/dehaze_enhance.cpp
+opencv2/opencv.hpp
 -
-string.h
--
-sstream
--
-capture_frame.h
-/home/plankton/CodeMax/DehazeEnhance/src/capture_frame.h
-view_frame.h
-/home/plankton/CodeMax/DehazeEnhance/src/view_frame.h
 dehaze_enhance.h
 /home/plankton/CodeMax/DehazeEnhance/src/dehaze_enhance.h
+capture_frame.h
+/home/plankton/CodeMax/DehazeEnhance/src/capture_frame.h
+logger.h
+/home/plankton/CodeMax/DehazeEnhance/src/logger.h
+view_frame.h
+/home/plankton/CodeMax/DehazeEnhance/src/view_frame.h
 
 /usr/local/include/log4cpp/Appender.hh
 log4cpp/Portability.hh

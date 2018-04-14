@@ -31,6 +31,7 @@ class DehazeEnhance : public ImageProcessing
         
         //Dark Channel Prior Algorithm
         void dark_channel_prior(CaptureFrame input);
+        CaptureFrame dark_channel_prior(CaptureFrame input,int mode);
         CaptureFrame find_airlight(CaptureFrame dark_channel,CaptureFrame saturation);
         CaptureFrame find_airlight(CaptureFrame input,int radius);
         CaptureFrame show_airlight(CaptureFrame input_image);
@@ -39,10 +40,13 @@ class DehazeEnhance : public ImageProcessing
 
         //Fusion Algorithm
         void fusion(CaptureFrame input);
+        CaptureFrame fusion(CaptureFrame input , int mode);
         void normalize_weights();
         CaptureFrame fusion_blender();
         CaptureFrame pyramid_fusion();
 
+
+        void video_enhance(std::string method ,CaptureFrame video);
 
 };
 

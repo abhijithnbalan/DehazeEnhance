@@ -52,6 +52,52 @@ void DehazeEnhance::dark_channel_prior(CaptureFrame input)//Dark channel prior m
     return;
 }
 
+CaptureFrame DehazeEnhance::dark_channel_prior(CaptureFrame input, int mode)//Dark channel prior method.
+{
+    original_image = input;//Keeping a copy of original. Accessible throughout the program.
+    CaptureFrame depth_map;//Depth map obtained from degradation from red channel in the input image.
+    
+    //CONTRAST ENHANCING
+    // en_HE = algo.hist_equalize(input);//Normal Histogram equalization
+    // en_CLAHE = algo.CLAHE_dehaze(input);//CLAHE algorithm
+    // logger.log_info("CLAHE filter applied");
+    
+    // DEPTH MAP
+    // depth_map = algo.red_irradiance(input,4);//Converting Red channel to color-depth-map.
+    // logger.log_info("Depth map generated");
+
+    //DARK CHANNEL 
+    dark_channel = algo.dark_channel(input,5);//Calculate darkchannel 
+    // u_darkchannel = algo.u_dark_channel(input,5);//UDCP only used green and blue color for darkchannel generation.
+    // logger.log_info("Dark Channel image generated");
+
+    //SATURATION MAP
+    saturation = algo.saturation_map(input,5);
+    // logger.log_info("Saturation map generated");
+    
+
+    // viewer.multiple_view_interrupted(input,dark_channel,saturation,depth_map,50);//Showing all the filter effects.
+
+    //AIRLIGHT ESTIMATION
+    airlight_image = find_airlight(dark_channel,saturation);
+    // dark_chnnel = find_airlight(en_CLAHE,5);
+    // airlight_image = show_airlight(input);
+    // viewer.multiple_view_interrupted(airlight_image,airlight_color,50);//Display for airlight estimation
+    // logger.log_info("Airlight estimated");
+
+
+    //TRANSMISSION ESTIMATION
+    find_transmission(input);
+    
+    //RECOVERING IMAGE
+    recovered_image = recover_image(input);
+
+    //Resutl
+    // viewer.multiple_view_interrupted(original_image,recovered_image,50);//Displaying initial image and final image.
+
+    return recovered_image;
+}
+
 CaptureFrame DehazeEnhance::show_airlight(CaptureFrame input_image)//Showing airlight
 {
     if (max_intensity_point.x + max_intensity_point.y == 0)//making sure that max_intensity_point has some data
@@ -319,6 +365,46 @@ void DehazeEnhance::fusion(CaptureFrame input)//Dehazing by fusion
 
     return;
 }
+
+CaptureFrame DehazeEnhance::fusion(CaptureFrame input,int mode)//Dehazing by fusion
+{
+    CaptureFrame original(input.retrieve_image().clone(),"original input");//keeping a copy of the original. Accessible throughout the program
+    
+    //PREPARING INPUTS
+    white_balanced_image = algo.balance_white(input);//White balanced image
+    en_CLAHE = algo.CLAHE_dehaze(original);//Contrast enhanced image
+    // en_HE = algo.hist_equalize(original);//Contrast enhanced image
+    // logger.log_warn("Inputs prepared");
+
+    //PREPARING THE WEIGHTS
+    laplacian_contrast_1 = algo.laplacian_contrast(white_balanced_image);//Laplacian contrast weight
+    laplacian_contrast_2 = algo.laplacian_contrast(en_CLAHE);
+    local_contrast_1 = algo.local_contrast(white_balanced_image);//Local contrast weight
+    local_contrast_2 = algo.local_contrast(en_CLAHE);
+    saliency_contrast_1 = algo.saliency_contrast(white_balanced_image);//Saliency weight
+    saliency_contrast_2 = algo.saliency_contrast(en_CLAHE);
+    exposedness_1 = algo.exposedness(white_balanced_image);//Exposedness weight
+    exposedness_2 = algo.exposedness(en_CLAHE);
+
+
+    // viewer.multiple_view_interrupted(en_CLAHE,white_balanced_image,50);//Displaying two inputs used
+    // //Displaying weights for both the pictures
+    // viewer.multiple_view_interrupted(laplacian_contrast_1,local_contrast_1,saliency_contrast_1,exposedness_1,75);
+    // viewer.multiple_view_interrupted(laplacian_contrast_2,local_contrast_2,saliency_contrast_2,exposedness_2,75);
+
+    normalize_weights();
+    // logger.log_info("Weights Normalized");
+
+    pyramid_blending = pyramid_fusion();
+    // naive_blending = fusion_blender();
+    // logger.log_info("Images blended");
+    recovered_image.reload_image(pyramid_blending.retrieve_image().clone(),"Recovered Image");
+    // viewer.multiple_view_interrupted(original,recovered_image,75);//Displaying image before and after
+
+    return recovered_image;
+}
+
+
 void DehazeEnhance::normalize_weights()//Normalizing weights
 {
     //Retrieving all the weights.
@@ -555,4 +641,78 @@ CaptureFrame DehazeEnhance::pyramid_fusion()//Pyramid blending (more advanced)
     //Returning fused image back to function.
     CaptureFrame output(fusion,"Fused image");
     return output;
+}
+
+void DehazeEnhance::video_enhance(std::string method , CaptureFrame video)
+{
+    CaptureFrame image;
+    video.frame_extraction();
+    image = resize_image(video,50);
+    cv::VideoWriter outputVideo1,outputVideo2;
+    cv::Size S2 = cv::Size((int)image.retrieve_image().cols*2,    // Acquire input size
+                  (int)image.retrieve_image().rows);
+    cv::Size S = cv::Size((int)image.retrieve_image().cols,    // Acquire input size
+                  (int)image.retrieve_image().cols);
+    int ex = static_cast<int>(video.retrieve_video().get(CV_CAP_PROP_FOURCC));     // Get Codec Type- Int form
+    outputVideo1.open("Enhanced_Video.mp4", ex, video.retrieve_video().get(CV_CAP_PROP_FPS), S, true);
+    outputVideo2.open("Orig_Enhance_comparison.mp4", ex, video.retrieve_video().get(CV_CAP_PROP_FPS), S2, true);
+    if (!outputVideo2.isOpened() || !outputVideo1.isOpened())
+    {
+        std::cout  << "Could not open the output video for write: " << std::endl;
+        return;
+    }
+    
+    if(method == "DCP")
+    {
+        logger.log_info("Dark Channel Prior method for video enhance");
+        
+        for(;;)
+        {
+            try
+            {
+                video.frame_extraction();
+            }
+            catch(...)
+            {
+                logger.log_warn("End of video reached");
+                break;
+            }
+            CaptureFrame output = dark_channel_prior(video,0);
+            outputVideo1 << output.retrieve_image();
+            CaptureFrame comparison = viewer.join_image_horizontal(video,output,0);
+            outputVideo2 << comparison.retrieve_image();
+            viewer.single_view_uninterrupted(output,50);
+            if(cv::waitKey(30) > 0)break;
+        }
+        logger.log_info("Video writing completed");
+    }
+
+    if(method == "fusion")
+    {
+        logger.log_info("Fusion method for video enhance");
+        
+        for(;;)
+        {
+            
+            try
+            {
+                video.frame_extraction();
+                image = resize_image(video,50);
+            }
+            catch(...)
+            {
+                logger.log_warn("End of video reached");
+                break;
+            }
+            CaptureFrame output = fusion(image,0);
+            outputVideo1 << output.retrieve_image();
+            CaptureFrame comparison = viewer.join_image_horizontal(image,output,0);
+            outputVideo2 << comparison.retrieve_image();
+            viewer.single_view_uninterrupted(output,50);
+            if(cv::waitKey(30) > 0)break;
+        }
+        logger.log_info("Video writing completed");
+    }
+
+    return;
 }

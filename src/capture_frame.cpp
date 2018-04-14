@@ -80,7 +80,7 @@ cv::Mat CaptureFrame::retrieve_image()
 //retrieve the video file stored in object
 cv::VideoCapture CaptureFrame::retrieve_video()
     {  
-        //returns the VideoCapture fil  e.
+        //returns the VideoCapture file.
         return cap;
     }
 
