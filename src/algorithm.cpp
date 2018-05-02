@@ -10,9 +10,11 @@
 CaptureFrame Algorithm::CLAHE_dehaze(CaptureFrame object) //CLAHE based basic dehazing algorithm
 {
     cv::Mat segmented;
-    segmented = CLAHE_dehaze(object.retrieve_image());
-    CaptureFrame output(segmented, "Dehazed image");
-    return output;
+    segmented = CLAHE_dehaze(object.retrieve_image().clone());
+    // CaptureFrame output(segmented, "Dehazed image");
+    object.reload_image(segmented, "Dehazed image");
+    segmented.release();
+    return object;
 }
 cv::Mat Algorithm::CLAHE_dehaze(cv::Mat object) //CLAHE based basic dehazing algorithm
 {
@@ -24,11 +26,13 @@ cv::Mat Algorithm::CLAHE_dehaze(cv::Mat object) //CLAHE based basic dehazing alg
     clahe->setClipLimit(CLAHE_clip_limit);
     clahe->apply(channels[2], channels[2]);
     clahe->apply(channels[1], channels[1]);
-    channels[2] = channels[2] * 0.85;
+    // channels[2] = channels[2] * 0.85;
     merge(channels, image_hsv);
     cv::Mat dehazed;
     cvtColor(image_hsv, dehazed, cv::COLOR_HSV2BGR);
     // GaussianBlur(dehazed, dehazed, cv::Size(3, 3), 2, 2);
+    channels.clear();
+    image_hsv.release();
     return dehazed;
 }
 CaptureFrame Algorithm::hist_equalize(CaptureFrame object) //CLAHE based basic dehazing algorithm
@@ -43,8 +47,9 @@ CaptureFrame Algorithm::hist_equalize(CaptureFrame object) //CLAHE based basic d
     cv::Mat dehazed;
     cvtColor(image_hsv, dehazed, cv::COLOR_HSV2BGR);
     // GaussianBlur(dehazed, dehazed, cv::Size(3, 3), 2, 2);
-    CaptureFrame output(dehazed, "Dehazed image");
-    return output;
+    // CaptureFrame output(dehazed, "Dehazed image");
+    object.reload_image(dehazed, "Dehazed image");
+    return object;
 }
 
 void Algorithm::set_CLAHE_clip_limit(int clip_limit)//function which set the clip limit in CLAHE dehazing
@@ -235,15 +240,22 @@ CaptureFrame Algorithm::laplacian_contrast(CaptureFrame input_image)
     // cv::imshow("laplacian contrast",laplacian);
     // cv::waitKey(0);
     // cv::convertScaleAbs(laplacian,laplacian);
-    cv::Mat out(laplacian.rows,laplacian.cols,CV_32FC1);
+    // cv::Mat out(laplacian.rows,laplacian.cols,CV_32FC1);
+
+    cv::Mat out;
     std::vector<cv::Mat> channels;
     cv::split(laplacian,channels);
-    out = channels[2];
+    out = channels[2].clone();
+    cv::merge(channels,laplacian);
     // std::cout<<out.type();
     out.convertTo(out,CV_8UC1);
-    
-    CaptureFrame output(out,"Laplacian Constrast");
-    return output;
+    // channels.clear();
+    // CaptureFrame output(out,"Laplacian Constrast");
+    // CaptureFrame output;
+    input_image.reload_image(out.clone(),"output laplace contrast");
+
+    // temp.release();laplacian.release();greyscale_image.release();out.release();
+    return input_image;
 }
 
 CaptureFrame Algorithm::local_contrast(CaptureFrame input_image)
@@ -279,8 +291,11 @@ CaptureFrame Algorithm::local_contrast(CaptureFrame input_image)
     }
     // cv::subtract(greyscale_image,local_contrast_image,local_contrast_image);
     local_contrast_image.convertTo(local_contrast_image,CV_8UC1);
-    CaptureFrame output(local_contrast_image,"Local Contrast");
-    return output;
+    // CaptureFrame output(local_contrast_image.clone(),"Local Contrast");
+    input_image.reload_image(local_contrast_image.clone(),"Local Contrast");
+
+    temp.release();greyscale_image.release();mask.release();local_contrast_image.release();
+    return input_image;
 }
 
 CaptureFrame Algorithm::saliency_contrast(CaptureFrame input_image)
@@ -309,8 +324,12 @@ CaptureFrame Algorithm::saliency_contrast(CaptureFrame input_image)
     cv::add(saliency_map,b_channel.mul(b_channel),saliency_map);
 
     saliency_map.convertTo(saliency_map,CV_8UC1);
-    CaptureFrame output(saliency_map,"Saliency Weight");
-    return output;
+    // CaptureFrame output(saliency_map.clone(),"Saliency Weight");
+    input_image.reload_image(saliency_map.clone(),"Saliency Weight");
+
+    temp.release();lab_image.release();l_channel.release();a_channel.release();b_channel.release();saliency_map.release();
+    channels.clear();
+    return input_image;
 
 }
 
@@ -337,25 +356,15 @@ CaptureFrame Algorithm::exposedness(CaptureFrame input_image)
     }
     
 
-    // cv::Mat temp1,temp2,temp3;
-    // cv::add(greyscale_image,cv::Scalar(average),temp1);
-    // cv::pow(temp1,2,temp2);    
-    // cv::divide(temp2,cv::Scalar(0.125),temp3);
-    // cv::exp(temp3,temp3);
-    // temp1.convertTo(temp1,CV_32FC1,1.0/255.0,0);
-    // temp2.convertTo(temp2,CV_32FC1,1.0/255.0,0);
-    // temp3.convertTo(temp3,CV_32FC1,1.0/255.0,0);
-    // cv::imshow("thenga",temp1);
-    // cv::waitKey(0);
-    // cv::imshow("kola",temp2);
-    // cv::waitKey(0);
-    // cv::imshow("managa",temp3);
-    // cv::waitKey(0);
-
     // expo.convertTo(expo,CV_32FC1,1.0/255.0,0);
     expo.convertTo(expo,CV_8UC1);
-    CaptureFrame output(expo,"Exposedness");
-    return output;
+    // CaptureFrame output(expo.clone(),"Exposedness");
+
+    input_image.reload_image(expo.clone(),"Exposedness");
+
+    temp.release();greyscale_image.release();expo.release();
+
+    return input_image;
 }
 
 //Akaze feature points identification
@@ -464,10 +473,10 @@ std::vector<cv::Mat> Algorithm::gaussion_pyrdown(CaptureFrame input, int levels)
 
 std::vector<cv::Mat> Algorithm::laplacian_pyrdown(CaptureFrame input, int levels)
 {
-    cv::Mat temp = input.retrieve_image().clone();
+    // cv::Mat temp = input.retrieve_image().clone();
     
     std::vector<cv::Mat> pyramids;
-    pyramids = laplacian_pyrdown(temp,levels);
+    pyramids = laplacian_pyrdown(input.retrieve_image().clone(),levels);
 
     return pyramids;
 }
@@ -476,11 +485,11 @@ std::vector<cv::Mat> Algorithm::laplacian_pyrdown(cv::Mat temp, int levels)
 {
     cv::Mat pyr_image;
     std::vector<cv::Mat> pyramids;
-    pyramids.push_back(temp);
+    pyramids.push_back(temp.clone());
     for(int i = 1; i < levels ; i++)
     {
         cv::pyrDown(temp,pyr_image,cv::Size(temp.cols/2,temp.rows/2));
-        pyramids.push_back(pyr_image);
+        pyramids.push_back(pyr_image.clone());
         temp = pyr_image.clone();
         // cv::imshow("pyramid",temp);
         // cv::waitKey(0);
@@ -497,18 +506,22 @@ std::vector<cv::Mat> Algorithm::laplacian_pyrdown(cv::Mat temp, int levels)
     return pyramids;
 }
 
-CaptureFrame Algorithm::pyr_reconstruct(std::vector<cv::Mat> pyramids,int levels)
+cv::Mat Algorithm::pyr_reconstruct(std::vector<cv::Mat> pyramids,int levels)
 {
     // int levels = pyramids.length();
+    cv::Mat tempyr;
     for(int i = levels-1; i > 0; i--)
     {
-        cv::Mat tempyr;
+        
         cv::pyrUp(pyramids[i],tempyr,pyramids[i-1].size());
         cv::add(pyramids[i - 1],tempyr,pyramids[i - 1]);
+        tempyr.release();
     }
     // cv::imshow("reconpyr",pyramids[0]);
     // cv::waitKey(0);
-    CaptureFrame output(pyramids[0],"Reconstructed pyramid");
+    // CaptureFrame output;
+    // output.reload_image(pyramids[0].clone(),"Reconstructed pyramid");
+    // CaptureFrame output(pyramids[0],"Reconstructed pyramid");
 
-    return output;
+    return pyramids[0];
 }

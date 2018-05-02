@@ -357,22 +357,23 @@ void DehazeEnhance::fusion(CaptureFrame input)//Dehazing by fusion
     normalize_weights();
     logger.log_info("Weights Normalized");
 
-    pyramid_blending = pyramid_fusion();
+    cv::Mat blend = pyramid_fusion();
     // naive_blending = fusion_blender();
     logger.log_info("Images blended");
-    recovered_image.reload_image(pyramid_blending.retrieve_image().clone(),"Recovered Image");
+    recovered_image.reload_image(blend,"Recovered Image");
     viewer.multiple_view_interrupted(original,recovered_image,75);//Displaying image before and after
 
     return;
 }
 
-CaptureFrame DehazeEnhance::fusion(CaptureFrame input,int mode)//Dehazing by fusion
+cv::Mat DehazeEnhance::fusion(CaptureFrame input1,int mode)//Dehazing by fusion
 {
-    CaptureFrame original(input.retrieve_image().clone(),"original input");//keeping a copy of the original. Accessible throughout the program
     
+    // CaptureFrame original(input.retrieve_image().clone(),"original input");//keeping a copy of the original. Accessible throughout the program
+    CaptureFrame input(input1.retrieve_image(),"copy of fusion");
     //PREPARING INPUTS
     white_balanced_image = algo.balance_white(input);//White balanced image
-    en_CLAHE = algo.CLAHE_dehaze(original);//Contrast enhanced image
+    en_CLAHE = algo.CLAHE_dehaze(input);//Contrast enhanced image
     // en_HE = algo.hist_equalize(original);//Contrast enhanced image
     // logger.log_warn("Inputs prepared");
 
@@ -395,13 +396,17 @@ CaptureFrame DehazeEnhance::fusion(CaptureFrame input,int mode)//Dehazing by fus
     normalize_weights();
     // logger.log_info("Weights Normalized");
 
-    pyramid_blending = pyramid_fusion();
+    
+    cv::Mat output;
+
+    output = pyramid_fusion();
     // naive_blending = fusion_blender();
     // logger.log_info("Images blended");
-    recovered_image.reload_image(pyramid_blending.retrieve_image().clone(),"Recovered Image");
+    // recovered_image.reload_image(pyramid_blending.retrieve_image().clone(),"Recovered Image");
     // viewer.multiple_view_interrupted(original,recovered_image,75);//Displaying image before and after
-
-    return recovered_image;
+    // laplacian_contrast_1.clear();
+    // pyramid_blending.~CaptureFrame();
+    return output;
 }
 
 
@@ -448,18 +453,32 @@ void DehazeEnhance::normalize_weights()//Normalizing weights
     local_normal_2 = local_2 / (local_2 + local_1);
     saliency_normal_2 = saliency_2 / (saliency_2 + saliency_1);
     expose_normal_2 = expose_2 / (expose_2 + expose_1);
+
+    laplacian_contrast_1.clear();
+    laplacian_contrast_2.clear();
+    local_contrast_1.clear();
+    local_contrast_2.clear();
+    saliency_contrast_1.clear();
+    saliency_contrast_2.clear();
+    exposedness_1.clear();
+    exposedness_2.clear();
     
     //Loading the normalised weights instead of weights.(for white balanced image)
-    laplacian_contrast_1.reload_image(laplace_normal_1,"Normalized weights");
-    local_contrast_1.reload_image(local_normal_1,"Normalized weights");
-    saliency_contrast_1.reload_image(saliency_normal_1,"Normalized weights");
-    exposedness_1.reload_image(expose_normal_1,"Normalized weights");
+    laplacian_contrast_1.reload_image(laplace_normal_1.clone(),"Normalized weights");
+    local_contrast_1.reload_image(local_normal_1.clone(),"Normalized weights");
+    saliency_contrast_1.reload_image(saliency_normal_1.clone(),"Normalized weights");
+    exposedness_1.reload_image(expose_normal_1.clone(),"Normalized weights");
     
     //Loading the normalised weights instead of weights.(for contrast enhanced image)
-    laplacian_contrast_2.reload_image(laplace_normal_2,"Normalized weights");
-    local_contrast_2.reload_image(local_normal_2,"Normalized weights");
-    saliency_contrast_2.reload_image(saliency_normal_2,"Normalized weights");
-    exposedness_2.reload_image(expose_normal_2,"Normalized weights");
+    laplacian_contrast_2.reload_image(laplace_normal_2.clone(),"Normalized weights");
+    local_contrast_2.reload_image(local_normal_2.clone(),"Normalized weights");
+    saliency_contrast_2.reload_image(saliency_normal_2.clone(),"Normalized weights");
+    exposedness_2.reload_image(expose_normal_2.clone(),"Normalized weights");
+
+    // laplace_normal_1.release();laplace_normal_2.release();
+    // local_normal_1.release();local_normal_2.release();
+    // saliency_normal_1.release();saliency_normal_2.release();
+    // expose_normal_1.release();expose_normal_2.release();
 
     return;
 }
@@ -560,7 +579,7 @@ CaptureFrame DehazeEnhance::fusion_blender()//Fusion blending basic
     return output;
 }
 
-CaptureFrame DehazeEnhance::pyramid_fusion()//Pyramid blending (more advanced)
+cv::Mat DehazeEnhance::pyramid_fusion()//Pyramid blending (more advanced)
 {
 
     int levels = 5;//Number of levels for pyramid operation
@@ -580,8 +599,8 @@ CaptureFrame DehazeEnhance::pyramid_fusion()//Pyramid blending (more advanced)
     //Converting weights into Float and storing
     total_weight_white.convertTo(total_weight_white,CV_32FC1);
     total_weight_contrast.convertTo(total_weight_contrast,CV_32FC1);
-    CaptureFrame white_weight(total_weight_white,"Whitebalanced weight");
-    CaptureFrame contrast_weight(total_weight_contrast,"Contrast enhanced weight");
+    white_weight.reload_image(total_weight_white,"Whitebalanced weight");
+    contrast_weight.reload_image(total_weight_contrast,"Contrast enhanced weight");
     
     //Taking Gaussian pyramid for weights
     std::vector<cv::Mat> weight_1 = algo.gaussion_pyrdown(white_weight,levels);
@@ -593,13 +612,15 @@ CaptureFrame DehazeEnhance::pyramid_fusion()//Pyramid blending (more advanced)
     img1.convertTo(img1,CV_32FC3);
     img2.convertTo(img2,CV_32FC3);
    
-    std::vector<cv::Mat> channels,b_white,g_white,r_white,b_contrast,g_contrast,r_contrast,fused_image_r,fused_image_g,fused_image_b;
+    std::vector<cv::Mat> channels,b_white,g_white,r_white,b_contrast,g_contrast,r_contrast;
 
     //Taking Laplace pyrmid for all the three channels
     cv::split(img1,channels);
     b_white = algo.laplacian_pyrdown(channels[0],5);
     g_white = algo.laplacian_pyrdown(channels[1],5);
     r_white = algo.laplacian_pyrdown(channels[2],5);
+
+    channels.clear();
     
     //Taking Laplace pyramid for all the three channels.
     cv::split(img2,channels);
@@ -608,39 +629,55 @@ CaptureFrame DehazeEnhance::pyramid_fusion()//Pyramid blending (more advanced)
     r_contrast = algo.laplacian_pyrdown(channels[2],5);
     
     cv::Mat sum(img1.rows,img1.cols,CV_32FC1);//Initializing sum
-    
+    // cv::Mat sum(img1.rows,img1.cols,CV_8UC1);
     //Fusion of images with weights of all images from all levels of pyramid
     for(int i = 0; i < levels; i++)
     {
         //Fusing all the channels in all levels
         cv::add(b_white[i].mul(weight_1[i]),b_contrast[i].mul(weight_2[i]),sum);
-        fused_image_b.push_back(sum);
+        fused_image_b.push_back(sum.clone());
         sum.release();
         cv::add(g_white[i].mul(weight_1[i]),g_contrast[i].mul(weight_2[i]),sum);
-        fused_image_g.push_back(sum);
+        fused_image_g.push_back(sum.clone());
         sum.release();        
         cv::add(r_white[i].mul(weight_1[i]),r_contrast[i].mul(weight_2[i]),sum);
-        fused_image_r.push_back(sum);
+        fused_image_r.push_back(sum.clone());
         sum.release();        
     }
-    
+    cv::waitKey(5);
     //Reconstructing from pyramid
-    CaptureFrame b_channel = algo.pyr_reconstruct(fused_image_b,5);
-    CaptureFrame g_channel = algo.pyr_reconstruct(fused_image_g,5);
-    CaptureFrame r_channel = algo.pyr_reconstruct(fused_image_r,5);
+    cv::Mat b_channel = algo.pyr_reconstruct(fused_image_b ,5);
+    cv::Mat g_channel = algo.pyr_reconstruct(fused_image_g ,5);
+    cv::Mat r_channel = algo.pyr_reconstruct(fused_image_r ,5);
 
-    //Merging the final output channels to form a single image
+    // //Merging the final output channels to form a single image
     std::vector<cv::Mat> recovered_channels;
-    recovered_channels.push_back(b_channel.retrieve_image().clone());
-    recovered_channels.push_back(g_channel.retrieve_image().clone());
-    recovered_channels.push_back(r_channel.retrieve_image().clone());
+    recovered_channels.push_back(b_channel);
+    recovered_channels.push_back(g_channel);
+    recovered_channels.push_back(r_channel);
     
     cv::Mat fusion;
     cv::merge(recovered_channels,fusion);
     fusion.convertTo(fusion,CV_8UC3);
     //Returning fused image back to function.
-    CaptureFrame output(fusion,"Fused image");
-    return output;
+    // CaptureFrame output(fusion,"Fused image");
+    // b_channel.clear();
+    // g_channel.clear();
+    // r_channel.clear();
+    recovered_channels.clear();
+    b_contrast.clear();
+    g_contrast.clear();
+    r_contrast.clear();
+    b_white.clear();
+    g_white.clear();
+    r_white.clear();
+    fused_image_b.clear();
+    fused_image_g.clear();
+    fused_image_r.clear();
+    weight_1.clear();
+    weight_2.clear();
+    cv::waitKey(5);
+    return fusion;
 }
 
 void DehazeEnhance::video_enhance(std::string method , CaptureFrame video)
@@ -651,11 +688,14 @@ void DehazeEnhance::video_enhance(std::string method , CaptureFrame video)
     cv::VideoWriter outputVideo1,outputVideo2;
     cv::Size S2 = cv::Size((int)image.retrieve_image().cols*2,    // Acquire input size
                   (int)image.retrieve_image().rows);
-    cv::Size S = cv::Size((int)image.retrieve_image().cols,    // Acquire input size
-                  (int)image.retrieve_image().cols);
+
+    cv::Size S1 = cv::Size((int)image.retrieve_image().cols,    // Acquire input size
+                  (int)image.retrieve_image().rows);
     int ex = static_cast<int>(video.retrieve_video().get(CV_CAP_PROP_FOURCC));     // Get Codec Type- Int form
-    outputVideo1.open("Enhanced_Video.mp4", ex, video.retrieve_video().get(CV_CAP_PROP_FPS), S, true);
+    outputVideo1.open("Enhanced_Video.mp4", ex, video.retrieve_video().get(CV_CAP_PROP_FPS), S1, true);
+
     outputVideo2.open("Orig_Enhance_comparison.mp4", ex, video.retrieve_video().get(CV_CAP_PROP_FPS), S2, true);
+
     if (!outputVideo2.isOpened() || !outputVideo1.isOpened())
     {
         std::cout  << "Could not open the output video for write: " << std::endl;
@@ -690,7 +730,8 @@ void DehazeEnhance::video_enhance(std::string method , CaptureFrame video)
     if(method == "fusion")
     {
         logger.log_info("Fusion method for video enhance");
-        
+        CaptureFrame output1;
+        CaptureFrame comparison;
         for(;;)
         {
             
@@ -704,15 +745,26 @@ void DehazeEnhance::video_enhance(std::string method , CaptureFrame video)
                 logger.log_warn("End of video reached");
                 break;
             }
-            CaptureFrame output = fusion(image,0);
-            outputVideo1 << output.retrieve_image();
-            CaptureFrame comparison = viewer.join_image_horizontal(image,output,0);
+            cv::Mat output = fusion(image,0);
+            // output = image;
+            cv::waitKey(3);
+            outputVideo1 << output;
+            output1.reload_image(output,"for comparison");
+            cv::waitKey(3);
+            comparison.reload_image(viewer.join_image_horizontal(image,output1,0).retrieve_image().clone(),"For comparison");
             outputVideo2 << comparison.retrieve_image();
-            viewer.single_view_uninterrupted(output,50);
-            if(cv::waitKey(30) > 0)break;
+            viewer.single_view_uninterrupted(output1,50);
+            // output1.~CaptureFrame();
+            // comparison.~CaptureFrame();
+            if(cv::waitKey(20) > 0)break;
         }
         logger.log_info("Video writing completed");
     }
 
     return;
+}
+
+DehazeEnhance::DehazeEnhance()
+{
+    
 }

@@ -46,8 +46,9 @@ class CaptureFrame
 
         // Constrructors that will take image file and window name
         CaptureFrame(cv::Mat input_image,std::string Window_name);
-        //Constructor that will initialise every varibles to be empty.
+        // Constructor that will initialise every varibles to be empty.
         CaptureFrame();
+        ~CaptureFrame();
 };
 
 #endif

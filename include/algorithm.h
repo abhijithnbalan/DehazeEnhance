@@ -46,7 +46,7 @@ public:
   std::vector<cv::Mat> gaussion_pyrdown(CaptureFrame image, int level);  //gaussian pyramid construction
   std::vector<cv::Mat> laplacian_pyrdown(CaptureFrame image, int level); //laplacian pyramid construction
   std::vector<cv::Mat> laplacian_pyrdown(cv::Mat image, int level);      //laplacian pyramid construction
-  CaptureFrame pyr_reconstruct(std::vector<cv::Mat> input, int levels);  //Pyramid reconstruction
+  cv::Mat pyr_reconstruct(std::vector<cv::Mat> pyramids , int levels);  //Pyramid reconstruction
 
   // //Image Mosaicing
   //Akaze keypoint creation with discription

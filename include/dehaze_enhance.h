@@ -18,10 +18,10 @@ class DehazeEnhance : public ImageProcessing
         cv::Scalar background_color;
         CaptureFrame laplacian_contrast_1,local_contrast_1,saliency_contrast_1,exposedness_1;//weights for white balance image
         CaptureFrame laplacian_contrast_2,local_contrast_2,saliency_contrast_2,exposedness_2;//weights for contrast enhanced image
-        CaptureFrame white_balanced_image;
+        CaptureFrame white_balanced_image,white_weight,contrast_weight;
         cv::Mat total_weight_white , total_weight_contrast;
         CaptureFrame laplace_fusion,local_fusion,saliency_fusion,exposedness_fusion;
-
+        std::vector<cv::Mat> fused_image_r,fused_image_g,fused_image_b;
     protected:
 
     public:
@@ -40,14 +40,15 @@ class DehazeEnhance : public ImageProcessing
 
         //Fusion Algorithm
         void fusion(CaptureFrame input);
-        CaptureFrame fusion(CaptureFrame input , int mode);
+        cv::Mat fusion(CaptureFrame input , int mode);
         void normalize_weights();
         CaptureFrame fusion_blender();
-        CaptureFrame pyramid_fusion();
+        cv::Mat pyramid_fusion();
 
 
         void video_enhance(std::string method ,CaptureFrame video);
 
+        DehazeEnhance();
 };
 
 #endif

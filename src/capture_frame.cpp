@@ -33,6 +33,7 @@ void CaptureFrame::capture_video(std::string filename,std::string video_window_n
             exit(0);
         }
         window_name = video_window_name;
+        return;
     }
 //when camera number is given 
 void CaptureFrame::capture_video(int camera,std::string video_window_name)
@@ -48,6 +49,7 @@ void CaptureFrame::capture_video(int camera,std::string video_window_name)
         }
         window_name = video_window_name;
         std::cout<<"test";
+        return;
     }
 
 //load image into already existing object of CaptureFrame class
@@ -62,12 +64,14 @@ void CaptureFrame::reload_image(cv::Mat image_input,std::string str)
         //Assignes new value to image and window name.
         image = image_input.clone();
         window_name = str;
+        return;
     }
 
 void CaptureFrame::reload_video(cv::VideoCapture video_input,std::string str)
     {
         cap = video_input;
         window_name = str;
+        return;
     }
 
 //retrieve the image stored in object
@@ -123,7 +127,6 @@ void CaptureFrame::frame_extraction()
         image.release();
         window_name.clear();
         cap.release();
-        std::cout<<"Capture Frame cleared"<<"\n";
         return;
     }
 
@@ -136,3 +139,10 @@ CaptureFrame::CaptureFrame(cv::Mat input,std::string window)
     }
 CaptureFrame::CaptureFrame()
 {}
+
+CaptureFrame::~CaptureFrame()
+{
+    image.release();
+    window_name.clear();
+    cap.release();
+}

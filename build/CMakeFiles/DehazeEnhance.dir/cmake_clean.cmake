@@ -1,4 +1,4 @@
-FILE(REMOVE_RECURSE
+file(REMOVE_RECURSE
   "CMakeFiles/DehazeEnhance.dir/src/logger.cpp.o"
   "CMakeFiles/DehazeEnhance.dir/src/capture_frame.cpp.o"
   "CMakeFiles/DehazeEnhance.dir/src/view_frame.cpp.o"
@@ -12,6 +12,6 @@ FILE(REMOVE_RECURSE
 )
 
 # Per-language clean rules from dependency scanning.
-FOREACH(lang CXX)
-  INCLUDE(CMakeFiles/DehazeEnhance.dir/cmake_clean_${lang}.cmake OPTIONAL)
-ENDFOREACH(lang)
+foreach(lang CXX)
+  include(CMakeFiles/DehazeEnhance.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()
