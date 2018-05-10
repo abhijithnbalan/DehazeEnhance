@@ -21,10 +21,15 @@ class DehazeEnhance : public ImageProcessing
         CaptureFrame white_balanced_image;
         cv::Mat total_weight_white , total_weight_contrast;
         CaptureFrame laplace_fusion,local_fusion,saliency_fusion,exposedness_fusion;
+        cv::Rect roi;
+
+        cv::Rect crop_window;
+        cv::Mat mask;
 
     protected:
 
     public:
+        cv::Rect roi_percent;
         //Publich Variables (used for final display)
         CaptureFrame original_image,dark_channel,en_CLAHE,en_HE,saturation,u_darkchannel;
         CaptureFrame naive_blending,image_fusion,weight_fusion,pyramid_blending;
@@ -37,6 +42,7 @@ class DehazeEnhance : public ImageProcessing
         CaptureFrame show_airlight(CaptureFrame input_image);
         void find_transmission(CaptureFrame image);
         CaptureFrame recover_image(CaptureFrame input_image);
+        CaptureFrame recover_image_shallow(CaptureFrame input_image);
 
         //Fusion Algorithm
         void fusion(CaptureFrame input);
@@ -45,6 +51,7 @@ class DehazeEnhance : public ImageProcessing
         CaptureFrame fusion_blender();
         CaptureFrame pyramid_fusion();
         void video_enhance(std::string method ,CaptureFrame video);
+        CaptureFrame comparison(CaptureFrame input, CaptureFrame enhanced);
 
 
 };

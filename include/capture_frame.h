@@ -30,6 +30,7 @@ class CaptureFrame
 
         //load a image file into an existing CaptureFrame object
         void reload_image(cv::Mat input_image,std::string Window_name);
+        void reload_image_shallow(cv::Mat input_image,std::string Window_name);
 
         //load a image file into an existing CaptureFrame object
         void reload_video(cv::VideoCapture input_video,std::string Window_name);

@@ -285,6 +285,59 @@ CaptureFrame DehazeEnhance::recover_image(CaptureFrame input_image)//Recovering 
     return output;
 }
 
+CaptureFrame DehazeEnhance::recover_image_shallow(CaptureFrame input_image)//Recovering image
+{
+    cv::Mat temp,transmission_div,recovered,tot_transmission;
+    temp = input_image.retrieve_image();
+
+    temp.convertTo(temp,CV_32FC3);
+    cv::Mat airlight_sub(temp.rows,temp.cols,CV_32FC3,cv::Scalar(0,0,0));
+    cv::Mat airlight;
+    airlight = airlight_color.retrieve_image();//Retrieving the airlight color
+
+    recovered = temp;
+
+    //Creating complete transmission map as a 3 channel image
+    std::vector<cv::Mat> ch;
+    ch.push_back(blue_transmission.retrieve_image());
+    ch.push_back(green_transmission.retrieve_image());
+    ch.push_back(red_transmission.retrieve_image());
+    cv::merge(ch,tot_transmission);
+
+    //FIRST step of Recovering, removing backlight from the whole image.
+    airlight_sub = temp - airlight;
+ 
+    std::vector<cv::Mat> reco_channels,channels;
+    cv::split(recovered,reco_channels);
+    cv::split(airlight_sub,channels);
+    cv::Mat blue_trans;
+    cv::Mat red_trans;
+    cv::Mat green_trans;
+    
+    //
+    cv::Mat max_transmission(blue_transmission.retrieve_image().rows,blue_transmission.retrieve_image().cols,CV_32FC1,cv::Scalar(0.1));
+    cv::max(blue_transmission.retrieve_image(),max_transmission,blue_trans);
+    cv::max(green_transmission.retrieve_image(),max_transmission,green_trans);
+    cv::max(red_transmission.retrieve_image(),max_transmission,red_trans);
+    
+    //SECOND step, dividing by transmission map for each channel
+    reco_channels[0] = channels[0]/blue_trans;
+    reco_channels[1] = channels[1]/green_trans;
+    reco_channels[2] = channels[2]/red_trans;
+    cv::merge(reco_channels,transmission_div);
+
+    //THIRD step, adding the background light back;
+    recovered = transmission_div + airlight;  
+    
+    //Converting back the image to uchar type and returning the recovered image
+    recovered.convertTo(recovered, CV_8UC3);
+    ch.clear();
+    reco_channels.clear();
+    channels.clear();
+    CaptureFrame output(recovered,"Recovered image");
+    return output;
+}
+
 void DehazeEnhance::fusion(CaptureFrame input)//Dehazing by fusion
 {
     CaptureFrame original(input.retrieve_image().clone(),"original input");//keeping a copy of the original. Accessible throughout the program
@@ -578,21 +631,32 @@ CaptureFrame DehazeEnhance::pyramid_fusion()//Pyramid blending (more advanced)
 }
 
 
-void DehazeEnhance::video_enhance(std::string method , CaptureFrame video)
+void DehazeEnhance::video_enhance(std::string method , CaptureFrame video1)
 {
-    CaptureFrame image;
-    video.frame_extraction();
-    image = resize_image(video,50);
+    cv::Mat image;
+    CaptureFrame video;
+    video1.frame_extraction();
+    image = video1.retrieve_image().clone();
     cv::VideoWriter outputVideo1,outputVideo2;
-    cv::Size S2 = cv::Size((int)image.retrieve_image().cols*2,    // Acquire input size
-                  (int)image.retrieve_image().rows);
+    cv::Size S2 = cv::Size((int)image.cols,    // Acquire input size
+                  (int)image.rows);
 
-    cv::Size S1 = cv::Size((int)image.retrieve_image().cols,    // Acquire input size
-                  (int)image.retrieve_image().rows);
-    int ex = static_cast<int>(video.retrieve_video().get(CV_CAP_PROP_FOURCC));     // Get Codec Type- Int form
-    outputVideo1.open("Enhanced_Video.mp4", ex, video.retrieve_video().get(CV_CAP_PROP_FPS), S1, true);
+    cv::Size S1 = cv::Size((int)image.cols,    // Acquire input size
+                  (int)image.rows);
+    int ex = static_cast<int>(video1.retrieve_video().get(CV_CAP_PROP_FOURCC));     // Get Codec Type- Int form
+    outputVideo1.open("Enhanced_Video.mp4", ex, video1.retrieve_video().get(CV_CAP_PROP_FPS), S1, true);
 
-    outputVideo2.open("Orig_Enhance_comparison.mp4", ex, video.retrieve_video().get(CV_CAP_PROP_FPS), S2, true);
+    outputVideo2.open("Orig_Enhance_comparison.mp4", ex, video1.retrieve_video().get(CV_CAP_PROP_FPS), S2, true);
+
+    // crop_window  = cv::Rect(image.cols/2 , 0 , image.cols/2 - 1 , image.rows);
+    // mask = cv::Mat::zeros(image.rows,image.cols,CV_8UC1);
+    // mask(crop_window).setTo(cv::Scalar(255));
+
+    roi.x = roi_percent.x * image.cols/100;
+    roi.width = roi_percent.width * image.cols/100;
+    roi.y = roi_percent.y * image.rows/100;
+    roi.height = roi_percent.height * image.rows/100;
+
 
     if (!outputVideo2.isOpened() || !outputVideo1.isOpened())
     {
@@ -629,14 +693,16 @@ void DehazeEnhance::video_enhance(std::string method , CaptureFrame video)
     {
         logger.log_info("Fusion method for video enhance");
         CaptureFrame output;
-        CaptureFrame comparison;
+        
+        CaptureFrame compare;
         for(;;)
         {
             
             try
             {
-                video.frame_extraction();
-                image = resize_image(video,50);
+                video1.frame_extraction();
+                // image = resize_image(video,50);
+                video.reload_image_shallow(video1.retrieve_image()(roi),"region of video");
             }
             catch(...)
             {
@@ -644,15 +710,24 @@ void DehazeEnhance::video_enhance(std::string method , CaptureFrame video)
                 break;
             }
             output.clear();
-            output = fusion(image,0);
+            // viewer.single_view_uninterrupted(video);
+            output = fusion(video,0);
             // output = image;
-            cv::waitKey(3);
-            outputVideo1 << output.retrieve_image();
+            
+            
+            // outputVideo1 << output.retrieve_image().clone();
             // output1.reload_image(output,"for comparison");
             cv::waitKey(3);
-            comparison.reload_image(viewer.join_image_horizontal(image,output,0).retrieve_image().clone(),"For comparison");
-            outputVideo2 << comparison.retrieve_image();
-            viewer.single_view_uninterrupted(output,50);
+
+            // compare = comparison(video,output);
+
+            // comparison.reload_image(viewer.join_image_horizontal(image,output,0).retrieve_image().clone(),"For comparison");
+            outputVideo2 << video1.retrieve_image().clone();
+
+            
+
+
+            viewer.single_view_uninterrupted(video1,50);
             // output1.~CaptureFrame();
             // comparison.~CaptureFrame();
             if(cv::waitKey(10) > 0)break;
@@ -663,14 +738,14 @@ void DehazeEnhance::video_enhance(std::string method , CaptureFrame video)
     return;
 }
 
-CaptureFrame DehazeEnhance::fusion(CaptureFrame input1,int mode)//Dehazing by fusion
+CaptureFrame DehazeEnhance::fusion(CaptureFrame input,int mode)//Dehazing by fusion
 {
     
     // CaptureFrame original(input.retrieve_image().clone(),"original input");//keeping a copy of the original. Accessible throughout the program
-    CaptureFrame input(input1.retrieve_image(),"copy of fusion");
+    // CaptureFrame input(input1.retrieve_image(),"copy of fusion");
     //PREPARING INPUTS
-    white_balanced_image = algo.balance_white(input);//White balanced image
-    en_CLAHE = algo.CLAHE_dehaze(input);//Contrast enhanced image
+    white_balanced_image = algo.balance_white_shallow(input);//White balanced image
+    en_CLAHE = algo.CLAHE_dehaze_shallow(input);//Contrast enhanced image
     // en_HE = algo.hist_equalize(original);//Contrast enhanced image
     // logger.log_warn("Inputs prepared");
 
@@ -744,10 +819,25 @@ CaptureFrame DehazeEnhance::dark_channel_prior(CaptureFrame input, int mode)//Da
     find_transmission(input);
     
     //RECOVERING IMAGE
-    recovered_image = recover_image(input);
+    recovered_image = recover_image_shallow(input);
 
     //Resutl
     // viewer.multiple_view_interrupted(original_image,recovered_image,50);//Displaying initial image and final image.
 
     return recovered_image;
+}
+CaptureFrame DehazeEnhance::comparison(CaptureFrame input, CaptureFrame enhanced)
+{
+    cv::Mat in,en;
+    
+    
+    in = input.retrieve_image().clone();
+    en = enhanced.retrieve_image().clone();
+
+    en.copyTo(in,mask);
+
+    CaptureFrame output(in,"Comparison");
+
+    return output;
+
 }

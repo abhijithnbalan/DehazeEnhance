@@ -62,6 +62,21 @@ void CaptureFrame::reload_image(cv::Mat image_input,std::string str)
         //Assignes new value to image and window name.
         image = image_input.clone();
         window_name = str;
+        return;
+    }
+
+    void CaptureFrame::reload_image_shallow(cv::Mat image_input,std::string str)
+    {
+        if ( !image_input.data )
+        {
+            //logger.log_error("No image data loaded");
+            std::cout<<"No image data found for loading for "<<str<<"\n";// no input image found
+            exit(0);
+        }
+        //Assignes new value to image and window name.
+        image = image_input;
+        window_name = str;
+        return;
     }
 
 void CaptureFrame::reload_video(cv::VideoCapture video_input,std::string str)

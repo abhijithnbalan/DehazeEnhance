@@ -25,8 +25,13 @@ int main(int argc, char **argv) //The main Function.
     } 
     DehazeEnhance de_en;//DehazeEnhance object. This will be used for the subsequent operations.
 
+    de_en.roi_percent.x = 50;
+    de_en.roi_percent.y = 0;
+    de_en.roi_percent.height = 100;
+    de_en.roi_percent.width = 50;
+
     CaptureFrame input_image;//Image container for loading and processing image.
-    // input_image.capture_image(argv[2],"Input Image");//Read image.
+    // input_image.capture_image(argv[1],"Input Image");//Read image.
     input_image.capture_video(argv[1],"video");
     logger.log_debug("Image loaded");
     

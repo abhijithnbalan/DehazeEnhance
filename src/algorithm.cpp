@@ -10,6 +10,14 @@
 CaptureFrame Algorithm::CLAHE_dehaze(CaptureFrame object) //CLAHE based basic dehazing algorithm
 {
     cv::Mat segmented;
+    segmented = CLAHE_dehaze(object.retrieve_image().clone());
+    CaptureFrame output(segmented, "Dehazed image");
+    return output;
+}
+
+CaptureFrame Algorithm::CLAHE_dehaze_shallow(CaptureFrame object) //CLAHE based basic dehazing algorithm
+{
+    cv::Mat segmented;
     segmented = CLAHE_dehaze(object.retrieve_image());
     CaptureFrame output(segmented, "Dehazed image");
     return output;
@@ -34,7 +42,7 @@ cv::Mat Algorithm::CLAHE_dehaze(cv::Mat object) //CLAHE based basic dehazing alg
 CaptureFrame Algorithm::hist_equalize(CaptureFrame object) //CLAHE based basic dehazing algorithm
 {
     cv::Mat image_hsv;
-    cvtColor(object.retrieve_image(), image_hsv, cv::COLOR_BGR2HSV);
+    cvtColor(object.retrieve_image().clone(), image_hsv, cv::COLOR_BGR2HSV);
     std::vector<cv::Mat> channels;
     split(image_hsv, channels);
     cv::equalizeHist(channels[1], channels[1]);
@@ -159,6 +167,15 @@ CaptureFrame Algorithm::saturation_map(CaptureFrame input_image, int radius)
 }
 
 CaptureFrame Algorithm::balance_white(CaptureFrame input_image)
+{
+    cv::Mat white_bal = input_image.retrieve_image().clone();
+    balance_white(white_bal);
+    CaptureFrame output(white_bal,"White Balanced Image");
+    return output;
+
+}
+
+CaptureFrame Algorithm::balance_white_shallow(CaptureFrame input_image)
 {
     cv::Mat white_bal = input_image.retrieve_image();
     balance_white(white_bal);
@@ -388,8 +405,8 @@ void Algorithm::ORB_feature_points(CaptureFrame image1,CaptureFrame image2)
     cv::Ptr<cv::ORB> orb = cv::ORB::create();
 
     //Input images
-    current_image = image1.retrieve_image();
-    previous_image = image2.retrieve_image();
+    current_image = image1.retrieve_image().clone();
+    previous_image = image2.retrieve_image().clone();
 
     //Detecting feature points through ORB
     orb->detectAndCompute(current_image, cv::noArray(), keypoints_current_image, description_current_image);

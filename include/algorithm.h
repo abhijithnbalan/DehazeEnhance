@@ -30,12 +30,14 @@ public:
   //Image Enhancing
 
   //Public
+  CaptureFrame CLAHE_dehaze_shallow(CaptureFrame input_image);
   CaptureFrame CLAHE_dehaze(CaptureFrame input_image);  //CLAHE contrast enhancement
   cv::Mat CLAHE_dehaze(cv::Mat input_image);            //CLAHE contrast enhancement
   void set_CLAHE_clip_limit(int clip_limit);            //support function for CLAHE dehazing
   CaptureFrame hist_equalize(CaptureFrame input_image); // histogram equilization algorithm
 
   //Fusion Enhancing
+  CaptureFrame balance_white_shallow(CaptureFrame input);
   CaptureFrame balance_white(CaptureFrame input);      //white balance image
   void balance_white(cv::Mat input);                   //white balance image
   CaptureFrame laplacian_contrast(CaptureFrame input); //Laplacian contrast
