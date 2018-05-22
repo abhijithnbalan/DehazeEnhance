@@ -3,3 +3,5 @@
 *.mp4
 *.jpg
 *.log
+!Dehaze_Enhance_DCP.png
+!Dehaze_Enhance_fusion.png
