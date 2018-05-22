@@ -304,12 +304,12 @@ CaptureFrame ViewFrame::add_overlay_percent(CaptureFrame object,int x_percent, i
     CaptureFrame output = add_overlay(object,x,y,s);
     return output;
 }
-CaptureFrame ViewFrame::join_image_horizontal(CaptureFrame object1,CaptureFrame object2,int mode)
+CaptureFrame ViewFrame::join_image_horizontal(CaptureFrame object1,CaptureFrame object2,int mode)//Join images for multiple views
 {
     cv::Mat image1 = object1.retrieve_image().clone();
     cv::Mat image2 = object2.retrieve_image().clone();
 
-    if (image1.channels() != 3)
+    if (image1.channels() != 3)//check for consistency in number of channels
     {
         
         if (image1.channels() == 1)
@@ -335,6 +335,8 @@ CaptureFrame ViewFrame::join_image_horizontal(CaptureFrame object1,CaptureFrame 
             return object2;
         }
     }
+
+    //paste the two inputs into a single bigger image
     int row_max = std::max(image1.rows,image2.rows);
     cv::Mat full_image = cv::Mat::zeros(row_max, image1.cols + image2.cols, CV_8UC3);
     cv::Rect sub_roi;
@@ -354,12 +356,12 @@ CaptureFrame ViewFrame::join_image_horizontal(CaptureFrame object1,CaptureFrame 
     return output;
 }
 
-CaptureFrame ViewFrame::join_image_vertical(CaptureFrame object1,CaptureFrame object2,int mode)
+CaptureFrame ViewFrame::join_image_vertical(CaptureFrame object1,CaptureFrame object2,int mode)//Join images for multiple views
 {
     cv::Mat image1 = object1.retrieve_image().clone();
     cv::Mat image2 = object2.retrieve_image().clone();
 
-    if (image1.channels() != 3)
+    if (image1.channels() != 3)//Checking consistency in number of channels
     {
         
         if (image1.channels() == 1)
@@ -385,6 +387,8 @@ CaptureFrame ViewFrame::join_image_vertical(CaptureFrame object1,CaptureFrame ob
             return object2;
         }
     }
+
+    //Pasting the images to a bigger image
     int col_max = std::max(image1.cols,image2.cols);
     cv::Mat full_image = cv::Mat::zeros(image1.rows + image2.rows,col_max, CV_8UC3);
     cv::Rect sub_roi;

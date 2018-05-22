@@ -678,13 +678,13 @@ void DehazeEnhance::video_enhance(std::string method , CaptureFrame video1)
             }
             output.clear();
             
-            output = fusion(video,0);
+            output = dark_channel_prior(video,0);//Dark channel algorithm
             
             cv::waitKey(3);
 
-            outputVideo1 << video1.retrieve_image().clone();
+            outputVideo1 << video1.retrieve_image().clone();//write into video file
 
-            viewer.single_view_uninterrupted(video1,50);
+            viewer.single_view_uninterrupted(video1,50);//Display the result
  
             if(cv::waitKey(10) > 0)break;
         }
@@ -703,7 +703,7 @@ void DehazeEnhance::video_enhance(std::string method , CaptureFrame video1)
             try
             {
                 video1.frame_extraction();
-                // image = resize_image(video,50);
+                // image = resize_image(video,50);//Optional resize
                 video.reload_image_shallow(video1.retrieve_image()(roi),"region of video");
             }
             catch(...)
@@ -713,15 +713,15 @@ void DehazeEnhance::video_enhance(std::string method , CaptureFrame video1)
             }
             output.clear();
             
-            output = fusion(video,0);
+            output = fusion(video,0);//Fusion algorithm
             
             cv::waitKey(3);
 
-            outputVideo1 << video1.retrieve_image().clone();
+            outputVideo1 << video1.retrieve_image().clone();//Writing into video file
 
-            viewer.single_view_uninterrupted(video1,50);
+            viewer.single_view_uninterrupted(video1,50);//show output
  
-            if(cv::waitKey(10) > 0)break;
+            if(cv::waitKey(10) > 0)break;//wait for keypress to exit the program
         }
         logger.log_info("Video writing completed");
     }

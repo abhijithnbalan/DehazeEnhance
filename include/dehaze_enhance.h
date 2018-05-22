@@ -11,6 +11,7 @@ class DehazeEnhance : public ImageProcessing
     private:
         ViewFrame viewer;//viewer can be used anywhere inside the object.
         Logger logger;//Logger support for the class
+        
         cv::Point max_intensity_point;
         CaptureFrame airlight_image,airlight_color;
         cv::Vec3b background_light;
