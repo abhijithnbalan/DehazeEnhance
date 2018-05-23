@@ -1,0 +1,38 @@
+{
+    "Program Execution" :
+    {
+        "DebugMode"                     : false,
+        "RunningMode"                   :"commandline",
+        "ExeMode"                       :"DEV"
+    },
+
+
+    "General Settings"  :
+    {
+        "DefaultVideo"                  :"samples/default.mp4",
+        "DefaultImage"                  :"samples/default.jpg",
+
+        "RegionOfInterest_x"            :0,
+        "RegionOfInterest_y"            :0,
+        "RegionOfInterest_height"       :100,
+        "RegionOfInterest_width"        :100
+    },
+
+
+    
+    "Fusion"            :
+    {
+        "PyramidLimit"                  :5
+    },
+    
+
+
+    "Dark Channel Prior":
+    {
+        "DarkChannelPatchSize"          :5,
+        "SaturationWeight"              :0.4,
+        "DarkChannelWeight"             :0.6,
+        "AirlightLimit"                 :0.9
+    }
+    
+}

@@ -24,12 +24,22 @@ class DehazeEnhance : public ImageProcessing
         CaptureFrame laplace_fusion,local_fusion,saliency_fusion,exposedness_fusion;
         cv::Rect roi;
 
+        
         cv::Rect crop_window;
         cv::Mat mask;
 
     protected:
 
-    public:
+    public: 
+        bool debug_mode;
+        bool dev_mode;
+        //Public variables for Dark Channel Prior
+        int dark_channel_patch_size;
+        float saturation_weight,dark_channel_weight;
+        float airlight_threshold;
+        //Public variables for fusion
+        int pyramid_level;
+
         cv::Rect roi_percent;
         //Publich Variables (used for final display)
         CaptureFrame original_image,dark_channel,en_CLAHE,en_HE,saturation,u_darkchannel;
@@ -53,7 +63,7 @@ class DehazeEnhance : public ImageProcessing
         CaptureFrame pyramid_fusion();
         void video_enhance(std::string method ,CaptureFrame video);
         CaptureFrame comparison(CaptureFrame input, CaptureFrame enhanced);
-
+        DehazeEnhance();
 
 };
 
