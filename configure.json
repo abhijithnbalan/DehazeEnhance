@@ -1,7 +1,7 @@
 {
     "Program Execution" :
     {
-        "DebugMode"                     : false,
+        "DebugMode"                     : true,
         "RunningMode"                   :"commandline",
         "ExeMode"                       :"DEV"
     },

@@ -648,11 +648,11 @@ void DehazeEnhance::video_enhance(std::string method, CaptureFrame video1)
     video1.frame_extraction();
     image = video1.retrieve_image().clone();
     cv::VideoWriter outputVideo1;
-
+    std::string outfile = filename.substr(0, filename.size()-4) + "_" + method + ".mp4";
     cv::Size S1 = cv::Size((int)image.cols, // Acquire input size
                            (int)image.rows);
     int ex = static_cast<int>(video1.retrieve_video().get(CV_CAP_PROP_FOURCC)); // Get Codec Type- Int form
-    outputVideo1.open("Enhanced_Video.mp4", ex, video1.retrieve_video().get(CV_CAP_PROP_FPS), S1, true);
+    outputVideo1.open(outfile, ex, video1.retrieve_video().get(CV_CAP_PROP_FPS), S1, true);
 
     //Converting percentage values to pixel values for Region of interest
     roi.x = roi_percent.x * image.cols / 100;
@@ -669,7 +669,6 @@ void DehazeEnhance::video_enhance(std::string method, CaptureFrame video1)
     if (method == "DCP")
     {
         logger.log_info("Dark Channel Prior method for video enhance");
-
         for (;;)
         {
             try

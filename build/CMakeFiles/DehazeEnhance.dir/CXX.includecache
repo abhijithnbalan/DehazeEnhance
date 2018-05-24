@@ -385,6 +385,8 @@ view_frame.h
 /home/rd/Vision_Opencv/DehazeEnhance/src/view_frame.h
 dehaze_enhance.h
 /home/rd/Vision_Opencv/DehazeEnhance/src/dehaze_enhance.h
+timer.h
+/home/rd/Vision_Opencv/DehazeEnhance/src/timer.h
 rapidjson/document.h
 /home/rd/Vision_Opencv/DehazeEnhance/src/rapidjson/document.h
 rapidjson/istreamwrapper.h

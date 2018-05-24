@@ -31,6 +31,8 @@ class DehazeEnhance : public ImageProcessing
     protected:
 
     public: 
+    
+        std::string filename;
         bool debug_mode;
         bool dev_mode;
         //Public variables for Dark Channel Prior

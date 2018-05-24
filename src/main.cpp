@@ -6,6 +6,7 @@
 #include "capture_frame.h"
 #include "view_frame.h"
 #include "dehaze_enhance.h"
+#include "timer.h"
 //for json support -- rapidjason is used
 #include "rapidjson/document.h"
 #include "rapidjson/istreamwrapper.h"
@@ -83,6 +84,8 @@ int main(int argc, char **argv) //The main Function.
            running_mode.c_str(), execution_mode.c_str(), debug_mode, roi_x, roi_y, roi_width, roi_height, pyramid_limit, dark_channel_patch_size, saturation_weight, dark_channel_weight, airlight_threshold);
     logger.debug_mode = debug_mode;
 
+    Timer timer1;
+
     
     DehazeEnhance de_en; //DehazeEnhance object. This will be used for the subsequent operations.
 
@@ -107,6 +110,7 @@ int main(int argc, char **argv) //The main Function.
         logger.log_info("Command line mode");
         if (argc >= 4)
         {
+            de_en.filename = argv[2];
             if (std::string(argv[1]) == "image")
             {
                 input_image.capture_image(argv[2], "Input Image"); //Read image.
@@ -140,7 +144,11 @@ int main(int argc, char **argv) //The main Function.
                 else if (std::string(argv[3]) == "fusion")
                 {
                     logger.log_warn("Video Enhancement using Fusion");
+                    
+                    timer1.timer_init();
                     de_en.video_enhance("fusion", input_image);
+                    timer1.timer_end();
+                    std::cout<<"Total time taken : "<<timer1.execution_time/60<<" minutes";
                 }
                 else
                     logger.log_error("Unidentified algorithm. Supported algorithms are DCP and fusion");
