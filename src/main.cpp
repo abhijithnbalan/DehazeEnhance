@@ -84,6 +84,7 @@ int main(int argc, char **argv) //The main Function.
            running_mode.c_str(), execution_mode.c_str(), debug_mode, roi_x, roi_y, roi_width, roi_height, pyramid_limit, dark_channel_patch_size, saturation_weight, dark_channel_weight, airlight_threshold);
     logger.debug_mode = debug_mode;
 
+    std::cout<<cv::getBuildInformation();
     Timer timer1;
 
     
@@ -138,7 +139,10 @@ int main(int argc, char **argv) //The main Function.
                 if (std::string(argv[3]) == "dcp" || std::string(argv[3]) == "DCP")
                 {
                     logger.log_warn("Video Enhancement using Dark Channel Prior");
+                    timer1.timer_init();
                     de_en.video_enhance("DCP", input_image);
+                    timer1.timer_end();
+                    std::cout<<"Total time taken : "<<timer1.execution_time/60<<" minutes";
                 }
 
                 else if (std::string(argv[3]) == "fusion")

@@ -135,13 +135,14 @@ CaptureFrame DehazeEnhance::find_airlight(CaptureFrame dark_channel, CaptureFram
     cv::Mat temp_color(orig_img.rows, orig_img.cols, CV_32FC3, background_color);
     airlight_color.reload_image(temp_color, "Background color");
     CaptureFrame output(orig_img, "airlight mark");
-    logger.log_info("Airlight estimated");
+    // logger.log_info("Airlight estimated");
     return output;
 }
 
 CaptureFrame DehazeEnhance::find_airlight(CaptureFrame input_image, int radius) //find airlight with input image(dark channel identification included)
 {
     cv::Mat temp = input_image.retrieve_image().clone(); //Storing input
+    
     cv::Mat dark = cv::Mat::zeros(temp.size(), CV_8UC1);
     cv::GaussianBlur(temp, temp, cv::Size(5, 5), 1, 1, 4); //blurring input for blending the colors slightly
 
@@ -232,7 +233,7 @@ void DehazeEnhance::find_transmission(CaptureFrame input_image) //Find transmiss
     blue_transmission.reload_image(blue_tra, "Transmisison for blue channel");
     green_transmission.reload_image(green_tra, "Transmisison for green channel");
 
-    logger.log_info("Transmission map generated");
+    // logger.log_info("Transmission map generated");
     return;
 }
 
@@ -279,10 +280,12 @@ CaptureFrame DehazeEnhance::recover_image(CaptureFrame input_image) //Recovering
 
     //THIRD step, adding the background light back;
     recovered = transmission_div + airlight;
+    
 
     //Converting back the image to uchar type and returning the recovered image
     recovered.convertTo(recovered, CV_8UC3);
     ch.clear();
+    // cv::imshow("tesat",recovered);
     reco_channels.clear();
     channels.clear();
     CaptureFrame output(recovered, "Recovered image");
@@ -642,6 +645,7 @@ CaptureFrame DehazeEnhance::pyramid_fusion() //Pyramid blending (more advanced)
 
 void DehazeEnhance::video_enhance(std::string method, CaptureFrame video1)
 {
+    // cv::setNumThreads(8);
     logger.debug_mode = debug_mode;
     cv::Mat image;
     CaptureFrame video;
@@ -683,15 +687,15 @@ void DehazeEnhance::video_enhance(std::string method, CaptureFrame video1)
                 break;
             }
             output.clear();
-
+            
             output = dark_channel_prior(video, 0); //Dark channel algorithm
-
+            
             cv::waitKey(3);
 
             outputVideo1 << video1.retrieve_image().clone(); //write into video file
             if (dev_mode)
             {
-                viewer.single_view_uninterrupted(video1, 50); //Display the result
+                viewer.single_view_uninterrupted(output, 50); //Display the result
             }
             if (cv::waitKey(10) > 0)
                 break;
@@ -766,20 +770,23 @@ CaptureFrame DehazeEnhance::fusion(CaptureFrame input, int mode) //Dehazing by f
 
 CaptureFrame DehazeEnhance::dark_channel_prior(CaptureFrame input, int mode) //Dark channel prior method minimal mode
 {
+    original_image.reload_image(input.retrieve_image().clone(),"original");
     //DARK CHANNEL
     dark_channel = algo.dark_channel(input, dark_channel_patch_size); //Calculate darkchannel
 
     //SATURATION MAP
     saturation = algo.saturation_map(input, dark_channel_patch_size);
-
+    // viewer.multiple_view_interrupted(dark_channel,saturation,50);
     //AIRLIGHT ESTIMATION
     airlight_image = find_airlight(dark_channel, saturation);
-
+    // viewer.single_view_interrupted(show_airlight(input),50);
+    viewer.single_view_uninterrupted(show_airlight(input),50);
     //TRANSMISSION ESTIMATION
     find_transmission(input);
 
     //RECOVERING IMAGE
-    recovered_image = recover_image_shallow(input);
+    recovered_image = recover_image(input);
+    // viewer.single_view_interrupted(recovered_image,50);
 
     return recovered_image;
 }

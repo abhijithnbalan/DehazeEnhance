@@ -22,16 +22,16 @@
     
     "Fusion"            :
     {
-        "PyramidLimit"                  :5
+        "PyramidLimit"                  :4
     },
     
 
 
     "Dark Channel Prior":
     {
-        "DarkChannelPatchSize"          :5,
-        "SaturationWeight"              :0.4,
-        "DarkChannelWeight"             :0.6,
+        "DarkChannelPatchSize"          :4,
+        "SaturationWeight"              :0.6,
+        "DarkChannelWeight"             :0.4,
         "AirlightLimit"                 :0.9
     }
     

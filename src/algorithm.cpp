@@ -76,14 +76,19 @@ CaptureFrame Algorithm::dark_channel(CaptureFrame input_image, int radius)
     int min_color = 0;
     int st_row,st_col,ed_row,ed_col;
     uchar* ImagePtr;
-    for(int row = 0 ; row < height ; row++)
+    // cv::setNumThreads(2);
+    cv::parallel_for_(cv::Range(0,height*width),[&](const cv::Range &range)
     {
-        for(int col = 0 ; col < width ; col++)
-        {
+
+    for(int r = range.start ; r < range.end ; r++)
+    {
+        int row = r / width;
+        int col = r % width;
+        
             st_row = row - radius; ed_row = row + radius;
             st_col = col - radius; ed_col = col + radius;
             st_row = (st_row < 0) ? 0 : st_row;
-            ed_row = (ed_row < width) ? ed_row : width - 1;
+            ed_row = (ed_row < height) ? ed_row : height - 1;
             st_col = (st_col < 0) ? 0 : st_col;
             ed_col = (ed_col < width) ? ed_col : width - 1;
             int cur = 0;
@@ -101,9 +106,10 @@ CaptureFrame Algorithm::dark_channel(CaptureFrame input_image, int radius)
 
                 }
             }
-            dark.at<uchar>(row, col) = min;
-        }
+        dark.at<uchar>(row, col) = min;
+        
     }
+    });
     temp.release();
     // cv::equalizeHist(dark,dark);
     CaptureFrame output(dark,"DCP");
