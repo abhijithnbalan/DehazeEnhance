@@ -748,17 +748,15 @@ CaptureFrame DehazeEnhance::fusion(CaptureFrame input, int mode) //Dehazing by f
 
     //PREPARING INPUTS
     CaptureFrame video;
-    timer1.timer_init();
-    timer5.timer_init();
+
     video.reload_image(input.retrieve_image()(roi), "region of video");
     cv::Mat org = input.retrieve_image();
-    en_CLAHE = algo.CLAHE_dehaze(video);  
+    en_CLAHE = algo.CLAHE_dehaze(video);  //Contrast enhanced image
     white_balanced_image = algo.balance_white(video); //White balanced image
-                //Contrast enhanced image
-    timer1.timer_end();
+
     // viewer.multiple_view_uninterrupted(white_balanced_image,en_CLAHE,50);
+
     //PREPARING THE WEIGHTS
-    timer2.timer_init();
     laplacian_contrast_1 = algo.laplacian_contrast(white_balanced_image); //Laplacian contrast weight
     laplacian_contrast_2 = algo.laplacian_contrast(en_CLAHE);
     local_contrast_1 = algo.local_contrast(white_balanced_image); //Local contrast weight
@@ -767,17 +765,12 @@ CaptureFrame DehazeEnhance::fusion(CaptureFrame input, int mode) //Dehazing by f
     saliency_contrast_2 = algo.saliency_contrast(en_CLAHE);
     exposedness_1 = algo.exposedness(white_balanced_image); //Exposedness weight
     exposedness_2 = algo.exposedness(en_CLAHE);
-    timer2.timer_end();
-    timer3.timer_init();
     normalize_weights();
-    timer3.timer_end();
     CaptureFrame output;
-    timer4.timer_init();
-    output = pyramid_fusion();
-    timer4.timer_end();
-    timer5.timer_end();
-    output.retrieve_image().copyTo(org(roi));
-    printf("i/p prepare : %.2f weight_prepare : %.2f normalize : %.2f fusion : %.2f Overall : %.2f \n",timer1.execution_time*1000,timer2.execution_time*1000,timer3.execution_time*1000,timer4.execution_time*1000,timer5.execution_time*1000);
+
+    output = pyramid_fusion();//Fusing the inputs with weights
+
+    output.retrieve_image().copyTo(org(roi));//writing to full sized video
     // viewer.single_view_uninterrupted(output,50);
     output.reload_image(org,"output");
     return output;
