@@ -24,7 +24,7 @@ class DehazeEnhance : public ImageProcessing
         cv::Mat total_weight_white , total_weight_contrast;
         CaptureFrame laplace_fusion,local_fusion,saliency_fusion,exposedness_fusion;
         cv::Rect roi;
-        Timer timer1,timer2,timer3,timer4,timer5;
+        Timer timer1,timer2,timer3,timer4,timer5,timer6;
         
         cv::Rect crop_window;
         cv::Mat mask;

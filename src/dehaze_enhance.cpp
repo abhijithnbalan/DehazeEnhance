@@ -15,7 +15,10 @@ void DehazeEnhance::dark_channel_prior(CaptureFrame input) //Dark channel prior 
 
     //CONTRAST ENHANCING
     // en_HE = algo.hist_equalize(input);//Normal Histogram equalization
+    timer6.timer_init();
+    timer1.timer_init();
     en_CLAHE = algo.CLAHE_dehaze(input); //CLAHE algorithm
+    timer1.timer_end();
     
 
     // DEPTH MAP
@@ -28,7 +31,9 @@ void DehazeEnhance::dark_channel_prior(CaptureFrame input) //Dark channel prior 
     logger.log_info("Dark Channel image generated");
 
     //SATURATION MAP
+    timer2.timer_init();
     saturation = algo.saturation_map(input, dark_channel_patch_size);
+    timer2.timer_end();
     logger.log_info("Saturation map generated");
 
     if (dev_mode)
@@ -36,7 +41,9 @@ void DehazeEnhance::dark_channel_prior(CaptureFrame input) //Dark channel prior 
         viewer.multiple_view_interrupted(input, dark_channel, saturation, depth_map, 50); //Showing all the filter effects.
     }
     //AIRLIGHT ESTIMATION
+    timer3.timer_init();
     airlight_image = find_airlight(dark_channel, saturation);
+    timer3.timer_end();
     if (dev_mode)
     {
         viewer.multiple_view_interrupted(airlight_image, airlight_color, 75); //Display for airlight estimation
@@ -44,10 +51,16 @@ void DehazeEnhance::dark_channel_prior(CaptureFrame input) //Dark channel prior 
     logger.log_info("Airlight estimated");
 
     //TRANSMISSION ESTIMATION
+    timer4.timer_init();
     find_transmission(input);
+    timer4.timer_end();
 
     //RECOVERING IMAGE
+    timer5.timer_init();
     recovered_image = recover_image(input);
+    timer5.timer_end();
+    timer6.timer_end();
+    printf("darkchannel : %.2f saturation : %.2f airlight : %.2f transmission : %.2f recovery : %.2f overall : %.2f \n",timer1.execution_time*1000,timer2.execution_time*1000,timer3.execution_time*1000,timer4.execution_time*1000,timer5.execution_time*1000,timer6.execution_time*1000);
 
     if (dev_mode) //Resutl
     {
@@ -352,12 +365,16 @@ void DehazeEnhance::fusion(CaptureFrame input) //Dehazing by fusion
     CaptureFrame original(input.retrieve_image().clone(), "original input"); //keeping a copy of the original. Accessible throughout the program
 
     //PREPARING INPUTS
+    timer1.timer_init();
+    timer5.timer_init();
     white_balanced_image = algo.balance_white(input); //White balanced image
     en_CLAHE = algo.CLAHE_dehaze(original);           //Contrast enhanced image
+    timer1.timer_end();
     // en_HE = algo.hist_equalize(original);//Contrast enhanced image
     logger.log_warn("Inputs prepared");
 
     //PREPARING THE WEIGHTS
+    timer2.timer_init();
     laplacian_contrast_1 = algo.laplacian_contrast(white_balanced_image); //Laplacian contrast weight
     laplacian_contrast_2 = algo.laplacian_contrast(en_CLAHE);
     local_contrast_1 = algo.local_contrast(white_balanced_image); //Local contrast weight
@@ -366,6 +383,7 @@ void DehazeEnhance::fusion(CaptureFrame input) //Dehazing by fusion
     saliency_contrast_2 = algo.saliency_contrast(en_CLAHE);
     exposedness_1 = algo.exposedness(white_balanced_image); //Exposedness weight
     exposedness_2 = algo.exposedness(en_CLAHE);
+    timer2.timer_end();
 
     if (dev_mode)
     {
@@ -374,10 +392,16 @@ void DehazeEnhance::fusion(CaptureFrame input) //Dehazing by fusion
         viewer.multiple_view_interrupted(laplacian_contrast_1, local_contrast_1, saliency_contrast_1, exposedness_1, 75);
         viewer.multiple_view_interrupted(laplacian_contrast_2, local_contrast_2, saliency_contrast_2, exposedness_2, 75);
     }
+    timer3.timer_init();
     normalize_weights();
+    timer3.timer_end();
     logger.log_info("Weights Normalized");
-
+    timer4.timer_init();
     pyramid_blending = pyramid_fusion();
+    timer4.timer_end();
+    timer5.timer_end();
+    printf("i/p prepare : %.2f weight_prepare : %.2f normalize : %.2f fusion : %.2f Overall : %.2f \n",timer1.execution_time*1000,timer2.execution_time*1000,timer3.execution_time*1000,timer4.execution_time*1000,timer5.execution_time*1000);
+
     // naive_blending = fusion_blender();
     logger.log_info("Images blended");
     if (dev_mode)
@@ -792,22 +816,32 @@ CaptureFrame DehazeEnhance::dark_channel_prior(CaptureFrame input1, int mode) //
 
     original_image.reload_image(input.retrieve_image().clone(),"original");
     //DARK CHANNEL
+    timer6.timer_init();
+    timer1.timer_init();
     dark_channel = algo.dark_channel(input, dark_channel_patch_size); //Calculate darkchannel
-
+    timer1.timer_end();
     //SATURATION MAP
+    timer2.timer_init();
     saturation = algo.saturation_map(input, dark_channel_patch_size);
+    timer2.timer_end();
     // viewer.multiple_view_interrupted(dark_channel,saturation,50);
     //AIRLIGHT ESTIMATION
-    
+    timer3.timer_init();
     airlight_image = find_airlight(dark_channel, saturation);
     // viewer.single_view_interrupted(show_airlight(input),50);
     // viewer.single_view_uninterrupted(show_airlight(input),50);
+    timer3.timer_end();
     //TRANSMISSION ESTIMATION
-   
+    timer4.timer_init();
     find_transmission(input);
+    timer4.timer_end();
 
     //RECOVERING IMAGE
+    timer5.timer_init();
     recovered_image = recover_image(input);
+    timer5.timer_end();
+    timer6.timer_end();
+    printf("darkchannel : %.2f saturation : %.2f airlight : %.2f transmission : %.2f recovery : %.2f overall : %.2f \n",timer1.execution_time*1000,timer2.execution_time*1000,timer3.execution_time*1000,timer4.execution_time*1000,timer5.execution_time*1000,timer6.execution_time*1000);
     
     recovered_image.retrieve_image().copyTo(org(roi));
     recovered_image.reload_image(org,"output");
