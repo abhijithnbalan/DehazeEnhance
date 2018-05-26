@@ -5,6 +5,7 @@
 #include "view_frame.h"
 #include "capture_frame.h"
 #include "image_processing.h"
+#include "timer.h"
 
 class DehazeEnhance : public ImageProcessing
 { 
@@ -23,7 +24,7 @@ class DehazeEnhance : public ImageProcessing
         cv::Mat total_weight_white , total_weight_contrast;
         CaptureFrame laplace_fusion,local_fusion,saliency_fusion,exposedness_fusion;
         cv::Rect roi;
-
+        Timer timer1,timer2,timer3,timer4,timer5;
         
         cv::Rect crop_window;
         cv::Mat mask;
@@ -41,6 +42,7 @@ class DehazeEnhance : public ImageProcessing
         float airlight_threshold;
         //Public variables for fusion
         int pyramid_level;
+        std::string white_algo;
 
         cv::Rect roi_percent;
         //Publich Variables (used for final display)

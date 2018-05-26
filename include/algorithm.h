@@ -50,6 +50,7 @@ public:
   std::vector<cv::Mat> laplacian_pyrdown(cv::Mat image, int level);      //laplacian pyramid construction
   CaptureFrame pyr_reconstruct(std::vector<cv::Mat> input, int levels);  //Pyramid reconstruction
 
+  std::string white_algo;
   // //Image Mosaicing
   //Akaze keypoint creation with discription
   void AKAZE_feature_points(CaptureFrame image1, CaptureFrame image2);

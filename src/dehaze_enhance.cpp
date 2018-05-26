@@ -4,6 +4,7 @@
 #include "dehaze_enhance.h"
 #include "capture_frame.h"
 #include "logger.h"
+#include "timer.h"
 #include "view_frame.h"
 
 void DehazeEnhance::dark_channel_prior(CaptureFrame input) //Dark channel prior method.
@@ -246,7 +247,6 @@ CaptureFrame DehazeEnhance::recover_image(CaptureFrame input_image) //Recovering
     cv::Mat airlight_sub(temp.rows, temp.cols, CV_32FC3, cv::Scalar(0, 0, 0));
     cv::Mat airlight;
     airlight = airlight_color.retrieve_image(); //Retrieving the airlight color
-
     recovered = temp.clone();
 
     //Creating complete transmission map as a 3 channel image
@@ -573,6 +573,7 @@ CaptureFrame DehazeEnhance::pyramid_fusion() //Pyramid blending (more advanced)
 
     //Retrieving input images and converting them to Float image
     cv::Mat img1 = white_balanced_image.retrieve_image().clone();
+    // cv::imshow("inside fusion",img1);
     cv::Mat img2 = en_CLAHE.retrieve_image().clone();
     img1.convertTo(img1, CV_32FC3);
     img2.convertTo(img2, CV_32FC3);
@@ -622,6 +623,7 @@ CaptureFrame DehazeEnhance::pyramid_fusion() //Pyramid blending (more advanced)
     cv::Mat fusion;
     cv::merge(recovered_channels, fusion);
     fusion.convertTo(fusion, CV_8UC3);
+    // cv::imshow("inside fusion ;last",fusion);
 
     //Clearing all the variables used
     fused_image_b.clear();
@@ -679,7 +681,6 @@ void DehazeEnhance::video_enhance(std::string method, CaptureFrame video1)
             {
                 video1.frame_extraction();
                 // image = resize_image(video,50);
-                video.reload_image_shallow(video1.retrieve_image()(roi), "region of video");
             }
             catch (...)
             {
@@ -688,11 +689,11 @@ void DehazeEnhance::video_enhance(std::string method, CaptureFrame video1)
             }
             output.clear();
             
-            output = dark_channel_prior(video, 0); //Dark channel algorithm
+            output = dark_channel_prior(video1, 0); //Dark channel algorithm
             
             cv::waitKey(3);
 
-            outputVideo1 << video1.retrieve_image().clone(); //write into video file
+            outputVideo1 << output.retrieve_image().clone(); //write into video file
             if (dev_mode)
             {
                 viewer.single_view_uninterrupted(output, 50); //Display the result
@@ -706,7 +707,7 @@ void DehazeEnhance::video_enhance(std::string method, CaptureFrame video1)
     if (method == "fusion")
     {
         logger.log_info("Fusion method for video enhance");
-
+        algo.white_algo = white_algo;
         CaptureFrame compare;
         for (;;)
         {
@@ -715,7 +716,7 @@ void DehazeEnhance::video_enhance(std::string method, CaptureFrame video1)
             {
                 video1.frame_extraction();
                 // image = resize_image(video,50);//Optional resize
-                video.reload_image_shallow(video1.retrieve_image()(roi), "region of video");
+                // video.reload_image_shallow(video1.retrieve_image()(roi), "region of video");
             }
             catch (...)
             {
@@ -724,14 +725,14 @@ void DehazeEnhance::video_enhance(std::string method, CaptureFrame video1)
             }
             output.clear();
 
-            output = fusion(video, 0); //Fusion algorithm
+            output = fusion(video1, 0); //Fusion algorithm
 
             cv::waitKey(3);
 
-            outputVideo1 << video1.retrieve_image().clone(); //Writing into video file
+            outputVideo1 << output.retrieve_image().clone(); //Writing into video file
             if (dev_mode)
             {
-                viewer.single_view_uninterrupted(video1, 50); //show output
+                viewer.single_view_uninterrupted(output, 50); //show output
             }
             if (cv::waitKey(10) > 0)
                 break; //wait for keypress to exit the program
@@ -746,10 +747,18 @@ CaptureFrame DehazeEnhance::fusion(CaptureFrame input, int mode) //Dehazing by f
 {
 
     //PREPARING INPUTS
-    white_balanced_image = algo.balance_white_shallow(input); //White balanced image
-    en_CLAHE = algo.CLAHE_dehaze_shallow(input);              //Contrast enhanced image
-
+    CaptureFrame video;
+    timer1.timer_init();
+    timer5.timer_init();
+    video.reload_image(input.retrieve_image()(roi), "region of video");
+    cv::Mat org = input.retrieve_image();
+    en_CLAHE = algo.CLAHE_dehaze(video);  
+    white_balanced_image = algo.balance_white(video); //White balanced image
+                //Contrast enhanced image
+    timer1.timer_end();
+    // viewer.multiple_view_uninterrupted(white_balanced_image,en_CLAHE,50);
     //PREPARING THE WEIGHTS
+    timer2.timer_init();
     laplacian_contrast_1 = algo.laplacian_contrast(white_balanced_image); //Laplacian contrast weight
     laplacian_contrast_2 = algo.laplacian_contrast(en_CLAHE);
     local_contrast_1 = algo.local_contrast(white_balanced_image); //Local contrast weight
@@ -758,18 +767,29 @@ CaptureFrame DehazeEnhance::fusion(CaptureFrame input, int mode) //Dehazing by f
     saliency_contrast_2 = algo.saliency_contrast(en_CLAHE);
     exposedness_1 = algo.exposedness(white_balanced_image); //Exposedness weight
     exposedness_2 = algo.exposedness(en_CLAHE);
-
+    timer2.timer_end();
+    timer3.timer_init();
     normalize_weights();
-
+    timer3.timer_end();
     CaptureFrame output;
-
+    timer4.timer_init();
     output = pyramid_fusion();
-
+    timer4.timer_end();
+    timer5.timer_end();
+    output.retrieve_image().copyTo(org(roi));
+    printf("i/p prepare : %.2f weight_prepare : %.2f normalize : %.2f fusion : %.2f Overall : %.2f \n",timer1.execution_time*1000,timer2.execution_time*1000,timer3.execution_time*1000,timer4.execution_time*1000,timer5.execution_time*1000);
+    // viewer.single_view_uninterrupted(output,50);
+    output.reload_image(org,"output");
     return output;
 }
 
-CaptureFrame DehazeEnhance::dark_channel_prior(CaptureFrame input, int mode) //Dark channel prior method minimal mode
+CaptureFrame DehazeEnhance::dark_channel_prior(CaptureFrame input1, int mode) //Dark channel prior method minimal mode
 {
+    
+    cv::Mat org = input1.retrieve_image().clone();
+    CaptureFrame input;
+    input.reload_image(input1.retrieve_image()(roi).clone(),"region of video");
+
     original_image.reload_image(input.retrieve_image().clone(),"original");
     //DARK CHANNEL
     dark_channel = algo.dark_channel(input, dark_channel_patch_size); //Calculate darkchannel
@@ -778,14 +798,19 @@ CaptureFrame DehazeEnhance::dark_channel_prior(CaptureFrame input, int mode) //D
     saturation = algo.saturation_map(input, dark_channel_patch_size);
     // viewer.multiple_view_interrupted(dark_channel,saturation,50);
     //AIRLIGHT ESTIMATION
+    
     airlight_image = find_airlight(dark_channel, saturation);
     // viewer.single_view_interrupted(show_airlight(input),50);
-    viewer.single_view_uninterrupted(show_airlight(input),50);
+    // viewer.single_view_uninterrupted(show_airlight(input),50);
     //TRANSMISSION ESTIMATION
+   
     find_transmission(input);
 
     //RECOVERING IMAGE
     recovered_image = recover_image(input);
+    
+    recovered_image.retrieve_image().copyTo(org(roi));
+    recovered_image.reload_image(org,"output");
     // viewer.single_view_interrupted(recovered_image,50);
 
     return recovered_image;

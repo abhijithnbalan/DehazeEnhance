@@ -17,7 +17,7 @@
 int main(int argc, char **argv) //The main Function.
 {
     bool debug_mode;
-    std::string running_mode, execution_mode;
+    std::string running_mode, execution_mode,white_algo;
     int roi_x, roi_y, roi_height, roi_width;
     int pyramid_limit;
     int dark_channel_patch_size;
@@ -57,6 +57,7 @@ int main(int argc, char **argv) //The main Function.
         roi_height = configuration_file["General Settings"]["RegionOfInterest_height"].GetInt();
 
         pyramid_limit = configuration_file["Fusion"]["PyramidLimit"].GetInt();
+        white_algo = configuration_file["Fusion"]["WhiteBalanceAlgorithm"].GetString();
 
         dark_channel_patch_size = configuration_file["Dark Channel Prior"]["DarkChannelPatchSize"].GetInt();
         saturation_weight = configuration_file["Dark Channel Prior"]["SaturationWeight"].GetFloat();
@@ -76,15 +77,16 @@ int main(int argc, char **argv) //The main Function.
            "General Settings\n"
            "The Region of Interset is selected as (%d,%d,%d,%d)\n\n"
            "Fusion Settings\n"
+           "White Balancing algorithm is %s\n"
            "Pyramid Limit is taken as %d\n\n"
            "Dark Channel Prior Settings\n"
            "Dark Channel Patch Size is taken as %d\n"
            "Weightage given for saturation is %.2f and for dark channel is %.2f\n"
            "Threshold for Airlight is %.2f\n\n ",
-           running_mode.c_str(), execution_mode.c_str(), debug_mode, roi_x, roi_y, roi_width, roi_height, pyramid_limit, dark_channel_patch_size, saturation_weight, dark_channel_weight, airlight_threshold);
+           running_mode.c_str(), execution_mode.c_str(), debug_mode, roi_x, roi_y, roi_width, roi_height,white_algo.c_str(), pyramid_limit, dark_channel_patch_size, saturation_weight, dark_channel_weight, airlight_threshold);
     logger.debug_mode = debug_mode;
 
-    std::cout<<cv::getBuildInformation();
+    // std::cout<<cv::getBuildInformation();
     Timer timer1;
 
     
@@ -126,6 +128,7 @@ int main(int argc, char **argv) //The main Function.
                 else if (std::string(argv[3]) == "fusion")
                 {
                     logger.log_warn("Image Enhancement using Fusion ");
+                    de_en.white_algo = white_algo;
                     de_en.fusion(input_image); //Enhancing by fusion method.
                 }
                 else
@@ -150,6 +153,7 @@ int main(int argc, char **argv) //The main Function.
                     logger.log_warn("Video Enhancement using Fusion");
                     
                     timer1.timer_init();
+                    de_en.white_algo = white_algo;
                     de_en.video_enhance("fusion", input_image);
                     timer1.timer_end();
                     std::cout<<"Total time taken : "<<timer1.execution_time/60<<" minutes";

@@ -31,6 +31,8 @@ capture_frame.h
 ../include/capture_frame.h
 image_processing.h
 ../include/image_processing.h
+timer.h
+../include/timer.h
 
 ../include/image_processing.h
 opencv2/opencv.hpp
@@ -303,6 +305,8 @@ opencv2/opencv.hpp
 -
 math.h
 -
+opencv2/xphoto.hpp
+/home/rd/Vision_Opencv/DehazeEnhance/src/opencv2/xphoto.hpp
 algorithm.h
 /home/rd/Vision_Opencv/DehazeEnhance/src/algorithm.h
 logger.h
@@ -331,6 +335,8 @@ capture_frame.h
 /home/rd/Vision_Opencv/DehazeEnhance/src/capture_frame.h
 logger.h
 /home/rd/Vision_Opencv/DehazeEnhance/src/logger.h
+timer.h
+/home/rd/Vision_Opencv/DehazeEnhance/src/timer.h
 view_frame.h
 /home/rd/Vision_Opencv/DehazeEnhance/src/view_frame.h
 
@@ -1963,4 +1969,30 @@ opencv2/core/cuda.hpp
 /usr/local/include/opencv2/xfeatures2d/nonfree.hpp
 opencv2/features2d.hpp
 /usr/local/include/opencv2/xfeatures2d/opencv2/features2d.hpp
+
+/usr/local/include/opencv2/xphoto.hpp
+xphoto/inpainting.hpp
+/usr/local/include/opencv2/xphoto/inpainting.hpp
+xphoto/white_balance.hpp
+/usr/local/include/opencv2/xphoto/white_balance.hpp
+xphoto/dct_image_denoising.hpp
+/usr/local/include/opencv2/xphoto/dct_image_denoising.hpp
+xphoto/bm3d_image_denoising.hpp
+/usr/local/include/opencv2/xphoto/bm3d_image_denoising.hpp
+
+/usr/local/include/opencv2/xphoto/bm3d_image_denoising.hpp
+opencv2/core.hpp
+-
+
+/usr/local/include/opencv2/xphoto/dct_image_denoising.hpp
+opencv2/core.hpp
+-
+
+/usr/local/include/opencv2/xphoto/inpainting.hpp
+opencv2/core.hpp
+-
+
+/usr/local/include/opencv2/xphoto/white_balance.hpp
+opencv2/core.hpp
+-
 

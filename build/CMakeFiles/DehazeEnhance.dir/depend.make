@@ -151,6 +151,11 @@ CMakeFiles/DehazeEnhance.dir/src/algorithm.cpp.o: /usr/local/include/opencv2/vid
 CMakeFiles/DehazeEnhance.dir/src/algorithm.cpp.o: /usr/local/include/opencv2/xfeatures2d.hpp
 CMakeFiles/DehazeEnhance.dir/src/algorithm.cpp.o: /usr/local/include/opencv2/xfeatures2d/cuda.hpp
 CMakeFiles/DehazeEnhance.dir/src/algorithm.cpp.o: /usr/local/include/opencv2/xfeatures2d/nonfree.hpp
+CMakeFiles/DehazeEnhance.dir/src/algorithm.cpp.o: /usr/local/include/opencv2/xphoto.hpp
+CMakeFiles/DehazeEnhance.dir/src/algorithm.cpp.o: /usr/local/include/opencv2/xphoto/bm3d_image_denoising.hpp
+CMakeFiles/DehazeEnhance.dir/src/algorithm.cpp.o: /usr/local/include/opencv2/xphoto/dct_image_denoising.hpp
+CMakeFiles/DehazeEnhance.dir/src/algorithm.cpp.o: /usr/local/include/opencv2/xphoto/inpainting.hpp
+CMakeFiles/DehazeEnhance.dir/src/algorithm.cpp.o: /usr/local/include/opencv2/xphoto/white_balance.hpp
 
 CMakeFiles/DehazeEnhance.dir/src/capture_frame.cpp.o: ../include/capture_frame.h
 CMakeFiles/DehazeEnhance.dir/src/capture_frame.cpp.o: ../include/logger.h
@@ -307,6 +312,7 @@ CMakeFiles/DehazeEnhance.dir/src/dehaze_enhance.cpp.o: ../include/capture_frame.
 CMakeFiles/DehazeEnhance.dir/src/dehaze_enhance.cpp.o: ../include/dehaze_enhance.h
 CMakeFiles/DehazeEnhance.dir/src/dehaze_enhance.cpp.o: ../include/image_processing.h
 CMakeFiles/DehazeEnhance.dir/src/dehaze_enhance.cpp.o: ../include/logger.h
+CMakeFiles/DehazeEnhance.dir/src/dehaze_enhance.cpp.o: ../include/timer.h
 CMakeFiles/DehazeEnhance.dir/src/dehaze_enhance.cpp.o: ../include/view_frame.h
 CMakeFiles/DehazeEnhance.dir/src/dehaze_enhance.cpp.o: ../src/dehaze_enhance.cpp
 CMakeFiles/DehazeEnhance.dir/src/dehaze_enhance.cpp.o: /usr/local/include/log4cpp/Appender.hh
@@ -395,7 +401,6 @@ CMakeFiles/DehazeEnhance.dir/src/dehaze_enhance.cpp.o: /usr/local/include/opencv
 CMakeFiles/DehazeEnhance.dir/src/dehaze_enhance.cpp.o: /usr/local/include/opencv2/flann/result_set.h
 CMakeFiles/DehazeEnhance.dir/src/dehaze_enhance.cpp.o: /usr/local/include/opencv2/flann/sampling.h
 CMakeFiles/DehazeEnhance.dir/src/dehaze_enhance.cpp.o: /usr/local/include/opencv2/flann/saving.h
-CMakeFiles/DehazeEnhance.dir/src/dehaze_enhance.cpp.o: /usr/local/include/opencv2/flann/timer.h
 CMakeFiles/DehazeEnhance.dir/src/dehaze_enhance.cpp.o: /usr/local/include/opencv2/highgui.hpp
 CMakeFiles/DehazeEnhance.dir/src/dehaze_enhance.cpp.o: /usr/local/include/opencv2/highgui/highgui_c.h
 CMakeFiles/DehazeEnhance.dir/src/dehaze_enhance.cpp.o: /usr/local/include/opencv2/imgcodecs.hpp

@@ -2,6 +2,8 @@
 //Including standard headers
 #include <opencv2/opencv.hpp>
 #include <math.h>
+#include "opencv2/xphoto.hpp"
+// #include "xphoto/white_balance.hpp"
 //Inlcuding user defined headers
 #include "algorithm.h"
 #include "logger.h"
@@ -32,7 +34,6 @@ cv::Mat Algorithm::CLAHE_dehaze(cv::Mat object) //CLAHE based basic dehazing alg
     clahe->setClipLimit(CLAHE_clip_limit);
     clahe->apply(channels[2], channels[2]);
     clahe->apply(channels[1], channels[1]);
-    channels[2] = channels[2] * 0.85;
     merge(channels, image_hsv);
     cv::Mat dehazed;
     cvtColor(image_hsv, dehazed, cv::COLOR_HSV2BGR);
@@ -46,7 +47,6 @@ CaptureFrame Algorithm::hist_equalize(CaptureFrame object) //CLAHE based basic d
     std::vector<cv::Mat> channels;
     split(image_hsv, channels);
     cv::equalizeHist(channels[1], channels[1]);
-    channels[2] = channels[2] * 0.85;
     merge(channels, image_hsv);
     cv::Mat dehazed;
     cvtColor(image_hsv, dehazed, cv::COLOR_HSV2BGR);
@@ -64,6 +64,7 @@ Algorithm::Algorithm()
     inlier_threshold = 2.5f; 
     nn_match_ratio = 0.8f; 
     CLAHE_clip_limit = 2;
+    white_algo = "Simple";
 }
 
 CaptureFrame Algorithm::dark_channel(CaptureFrame input_image, int radius)
@@ -76,19 +77,14 @@ CaptureFrame Algorithm::dark_channel(CaptureFrame input_image, int radius)
     int min_color = 0;
     int st_row,st_col,ed_row,ed_col;
     uchar* ImagePtr;
-    // cv::setNumThreads(2);
-    cv::parallel_for_(cv::Range(0,height*width),[&](const cv::Range &range)
+    for(int row = 0 ; row < height ; row++)
     {
-
-    for(int r = range.start ; r < range.end ; r++)
-    {
-        int row = r / width;
-        int col = r % width;
-        
+        for(int col = 0 ; col < width ; col++)
+        {
             st_row = row - radius; ed_row = row + radius;
             st_col = col - radius; ed_col = col + radius;
             st_row = (st_row < 0) ? 0 : st_row;
-            ed_row = (ed_row < height) ? ed_row : height - 1;
+            ed_row = (ed_row < width) ? ed_row : width - 1;
             st_col = (st_col < 0) ? 0 : st_col;
             ed_col = (ed_col < width) ? ed_col : width - 1;
             int cur = 0;
@@ -106,10 +102,9 @@ CaptureFrame Algorithm::dark_channel(CaptureFrame input_image, int radius)
 
                 }
             }
-        dark.at<uchar>(row, col) = min;
-        
+            dark.at<uchar>(row, col) = min;
+        }
     }
-    });
     temp.release();
     // cv::equalizeHist(dark,dark);
     CaptureFrame output(dark,"DCP");
@@ -175,7 +170,15 @@ CaptureFrame Algorithm::saturation_map(CaptureFrame input_image, int radius)
 CaptureFrame Algorithm::balance_white(CaptureFrame input_image)
 {
     cv::Mat white_bal = input_image.retrieve_image().clone();
-    balance_white(white_bal);
+    // balance_white(white_bal);
+    cv::Ptr <cv::xphoto::WhiteBalancer> white_balancer;//White Balancer object
+    white_balancer = cv::xphoto::createSimpleWB();//Initializing with simple white balancing algorithm
+    if(white_algo == "GreyWorld")
+    {
+        white_balancer = cv::xphoto::createGrayworldWB();
+    }
+    white_balancer->balanceWhite(white_bal,white_bal);//Whitebalancing the input
+    
     CaptureFrame output(white_bal,"White Balanced Image");
     return output;
 
@@ -183,8 +186,21 @@ CaptureFrame Algorithm::balance_white(CaptureFrame input_image)
 
 CaptureFrame Algorithm::balance_white_shallow(CaptureFrame input_image)
 {
+
     cv::Mat white_bal = input_image.retrieve_image();
-    balance_white(white_bal);
+    // balance_white(white_bal);
+    
+    cv::Ptr <cv::xphoto::WhiteBalancer> white_balancer;//White Balancer object
+
+    white_balancer = cv::xphoto::createSimpleWB();//Initializing with simple white balancing algorithm
+    if(white_algo == "GreyWorld")
+    {
+        white_balancer = cv::xphoto::createGrayworldWB();
+    }
+    white_balancer->balanceWhite(white_bal,white_bal);//White balancing the input
+  
+    // cv::imshow("whitebal",white_bal);
+
     CaptureFrame output(white_bal,"White Balanced Image");
     return output;
 

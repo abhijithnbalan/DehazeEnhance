@@ -12,17 +12,18 @@
         "DefaultVideo"                  :"samples/default.mp4",
         "DefaultImage"                  :"samples/default.jpg",
 
-        "RegionOfInterest_x"            :0,
-        "RegionOfInterest_y"            :0,
-        "RegionOfInterest_height"       :100,
-        "RegionOfInterest_width"        :100
+        "RegionOfInterest_x"            :10,
+        "RegionOfInterest_y"            :10,
+        "RegionOfInterest_height"       :80,
+        "RegionOfInterest_width"        :80
     },
 
 
     
     "Fusion"            :
     {
-        "PyramidLimit"                  :4
+        "PyramidLimit"                  :5,
+        "WhiteBalanceAlgorithm"         :"GreyWorld"
     },
     
 
@@ -30,8 +31,8 @@
     "Dark Channel Prior":
     {
         "DarkChannelPatchSize"          :4,
-        "SaturationWeight"              :0.6,
-        "DarkChannelWeight"             :0.4,
+        "SaturationWeight"              :0.7,
+        "DarkChannelWeight"             :0.3,
         "AirlightLimit"                 :0.9
     }
     

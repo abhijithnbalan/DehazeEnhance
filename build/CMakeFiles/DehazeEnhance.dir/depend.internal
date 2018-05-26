@@ -152,6 +152,11 @@ CMakeFiles/DehazeEnhance.dir/src/algorithm.cpp.o
  /usr/local/include/opencv2/xfeatures2d.hpp
  /usr/local/include/opencv2/xfeatures2d/cuda.hpp
  /usr/local/include/opencv2/xfeatures2d/nonfree.hpp
+ /usr/local/include/opencv2/xphoto.hpp
+ /usr/local/include/opencv2/xphoto/bm3d_image_denoising.hpp
+ /usr/local/include/opencv2/xphoto/dct_image_denoising.hpp
+ /usr/local/include/opencv2/xphoto/inpainting.hpp
+ /usr/local/include/opencv2/xphoto/white_balance.hpp
 CMakeFiles/DehazeEnhance.dir/src/capture_frame.cpp.o
  ../include/capture_frame.h
  ../include/logger.h
@@ -308,6 +313,7 @@ CMakeFiles/DehazeEnhance.dir/src/dehaze_enhance.cpp.o
  ../include/dehaze_enhance.h
  ../include/image_processing.h
  ../include/logger.h
+ ../include/timer.h
  ../include/view_frame.h
  /home/rd/Vision_Opencv/DehazeEnhance/src/dehaze_enhance.cpp
  /usr/local/include/log4cpp/Appender.hh
@@ -396,7 +402,6 @@ CMakeFiles/DehazeEnhance.dir/src/dehaze_enhance.cpp.o
  /usr/local/include/opencv2/flann/result_set.h
  /usr/local/include/opencv2/flann/sampling.h
  /usr/local/include/opencv2/flann/saving.h
- /usr/local/include/opencv2/flann/timer.h
  /usr/local/include/opencv2/highgui.hpp
  /usr/local/include/opencv2/highgui/highgui_c.h
  /usr/local/include/opencv2/imgcodecs.hpp

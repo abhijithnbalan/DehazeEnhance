@@ -44,6 +44,9 @@
         "ostream": "cpp",
         "sstream": "cpp",
         "streambuf": "cpp",
-        "system_error": "cpp"
+        "system_error": "cpp",
+        "codecvt": "cpp",
+        "condition_variable": "cpp",
+        "future": "cpp"
     }
 }
