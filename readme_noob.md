@@ -52,3 +52,48 @@ After finding background color, it is used to find transmission map for all the 
 ## 3. Recovering Image
 
 Transmission maps are used to recover each channels of the image and they are are fused to get the final image.
+
+## Fusion
+
+ Fusion algorithm uses two enhanced images from the input image and fuses them together to form the final enhanced image.
+ 
+ Underwater images suffer quality loss mainly in two ways
+
+ 1. Contrast loss because of forward and backward scattering
+ 2. Color shift becuase of preferential absorption of color underwater.
+
+ Fusion creates contrast enhanced image and a white balanced(color balanced) image and fuses them together using 4 different weights normalized.
+
+ ### Steps
+
+ 1. Prepare enhanced inputs
+ 2. Prepare weights for each inputs
+ 3. Normalize the weights
+ 4. Fuse the images with normalized weight
+
+ ## 1. Prepare Inputs
+
+ Here, contrast enhanced image will be obtained after applying a CLAHE filter. CLAHE enhanced the contrast preserving contrast after a histogram equalization.
+
+ Color enhanced image is obtained by applying white balancing algorithm on the image. There are two algorithms used for white balancing.
+ 1.  Simple white balancing
+ 2. Greyworld white balancing
+
+ ## 2. Prepare Weights
+
+  Four different weights are used in this method
+  1. Laplacian contrast
+  2. Local contrast
+  3. Saliency contrast
+  4. Exposedness
+
+These set of four weights will be created for both the images.
+
+## 3. Normalize weights
+
+Four weights will be normalized to one weight which will be used for blending. Simple averaging is used for now.
+
+## 4. Fusing images
+
+The last part of creating the output. Pyramid blending is used with user defined pyramid limit. It takes the input images and their normalized weights and blend them together through pyramid transformations.
+

@@ -157,7 +157,7 @@ _fusion_ : Fusion algorithm
 
 
 
-## RUNNING THE CODE
+## PROGRAM ACCESSIBLE PARAMETERS
 
 *(for the following section, 'de_en' is used as an object to the class DehazeEnhance)
 
