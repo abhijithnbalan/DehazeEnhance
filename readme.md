@@ -159,22 +159,7 @@ _fusion_ : Fusion algorithm
 
 ## PROGRAM ACCESSIBLE PARAMETERS
 
-*(for the following section, 'de_en' is used as an object to the class DehazeEnhance)
-
-### Public Variables that can be set manually for Laser Ranging
-
-1. de_en.roi_percentage
-
-   ```cv::Rect``` : Region of interest for Enhancing.
-
-2. de_en.dark_channel
-
-   ```CaptureFrame``` : The calculated darkchannel in DCP method.
-
-3. de_en.saturation
-
-   ```CaptureFrame``` : The calculated saturation in DCP method.
-
+( *for the following section, 'de_en' is used as an object to the class DehazeEnhance* )
 
 
 ### Public functions that can be used set parameters for Laser Ranging
@@ -183,46 +168,10 @@ _fusion_ : Fusion algorithm
 
     The dark channel prior algorithm for image
 
-2. de_en.find_airlight()
-
-    Function to find the airlight of the image
 
 3. de_en.show_airlight()
 
     This will show the identified airlight color in image.
-    
-4. de_en.find_transmission()
-
-    Function to find the transmission map for every channels in the image.
-
-5. de_en.recover_image()
-
-    Final part of the algorithm. It uses the transmission map to recover every channels and combine them to produce output
-
-6. de_en.recover\_image_shallow()
-
-    Recovering image with shallow copy. Pointers are used instead of making a copy. used for region of interest
-
-7. de_en.fusion()
-
-    Fusion algorithm for image enhancement
-
-8. de_en.normalize_weights()
-
-    Normalizing weight according to all weights used in fusino process
-
-9. de_en.pyramid_blender and fusion_blender
-
-    Blending through pyramid tranformation using the weights. and fusion blender is a simple blending function. pyramid_blending is used because of its better performance.
-
-10. de_en.video_enhance()
-
-    Video enhance is a function to enhance the video and write the enhanced video in to another video file. First argument of this funtion is the algorithm name.
-
-11. de_en.comparison()
-
-    Function to make the comparison video. This will write both original and enhanced video to another video file side by side for better comparison of the extent of enhancement.
-
 
 
 ## Program Flow
@@ -498,6 +447,8 @@ Input used : 1080p
      RAM  - 16 GB
     Ubuntu 16.04
 
+## Fusion
+
 | Tasks                 |   Time Taken  (ms)                    |
 | -------               | ----------                            |
 | Prepare Inputs        |   113.29                             |
@@ -506,3 +457,16 @@ Input used : 1080p
 | Pyramid Blending|   64.68                            |
 |    |   |
 | Total               |   406.41                               |
+
+
+## Dark Channel Prior
+
+| Tasks                 |   Time Taken  (ms)                    |
+| -------               | ----------                            |
+| Dark channel preparation        |   2079.68                             |
+| Saturation preparation       |    16.04  |
+| Airlight calculation    |   33.29                                 |
+| Transmission map calculation    |   64.68                            |
+| Recovery of image    |   66.31                           |
+|    |   |
+| Total               |   2194.18                              |
