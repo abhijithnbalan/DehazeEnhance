@@ -14,8 +14,8 @@
 
         "RegionOfInterest_x"            :10,
         "RegionOfInterest_y"            :10,
-        "RegionOfInterest_height"       :80,
-        "RegionOfInterest_width"        :80
+        "RegionOfInterest_width"        :80,
+        "RegionOfInterest_height"       :80
     },
 
 

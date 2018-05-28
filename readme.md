@@ -52,7 +52,88 @@ To Execute the code, change the directory to bin.
 ```
 cd bin
 ```
+### Configuration File
 
+#### Program Execution
+1. DebugMode : 
+
+    "true" : Log file will be written to disk, Debug logs will be recorded.
+
+    "false" : Log file will not be written. All logs above Debug flag will be shown in console.
+
+2. RunnningMode : 
+
+    "commandline" : run with arguments list in terminal.
+
+    "GUI" : Run with information flow from GUI layer.
+
+    "automated" : Run with Directory for enhancing every file in it.
+
+3. ExeMode : 
+
+    "DEV" : Developer mode. This will display every windows during execution.
+
+    "EXE" Execution mode. This will suppress every windows displays. Output files will be written
+
+#### General Settings
+1. DefaultVideo : 
+
+    "PathToVideo" : This video file will be used when no file are supplied by the user.
+
+2. DefaultImage : 
+
+    "PathToImage" : This image file will be used when no files are supplied by the user.
+
+3. RegionOfInterest_x
+
+    integer(0,100) : Distance to the left side of Region of interest in percentage of width.
+
+4. RegionOfInterest_y
+
+    integer(0,100) :  Distance to the top side of Region of interest in percentage of height.
+
+5. RegionOfInterest_width
+
+    integer(0,100) :  Width of Region of interest in percentage of width.
+
+6. RegionOfInterest_height
+
+    integer(0,100) : Height of Region of interest in percentage of height.
+
+#### Fusion
+
+1. PyramidLimit : 
+
+    integer(>0) : The level of pyramid transformation in blending for Fusion algorithm.
+
+2. WhiteBalanceAlgorithm : 
+
+    "Simple"  : Simple white balancing algorithm for Fusion enhancing.
+
+    "GreyWorld" : Greyworld algorithm for white balancing for Fusion enhancing.
+
+#### Dark Channel Prior
+
+1. DarkChannelPatchSize : 
+
+    integer(>0) : The width and height in pixels for the patch used in dark channel calculation. Lesser the patch size, faster the algorithm
+
+2. SaturationWeight : 
+
+    fraction (0.0,1.0) : The weightage given to saturation for finding airlight in the scene.
+
+3. DarkChannelWeight : 
+
+    fraction (0.0, 1.0) : The weightage given to dark channel for finding airlight in the scene.
+4. AirlightLimit : 
+
+    fraction (0.0, 1.0) : The Threshold for airlight filtering after getting the weighted input from saturation and dark channel.
+
+
+
+#### Commandline execution
+
+The commandline running mode is given below.
 ```
 ./DehazeEnhance <1st argument> <2nd argument> <3rd argument>
 ```
