@@ -227,11 +227,11 @@ _fusion_ : Fusion algorithm
 
 ## Program Flow
 ### Dark Channel Prior
-![DCP ProgramFlow](documentation/Dehaze_Enhance_DCP.png)
+![DCP ProgramFlow](documentation/DarkChannel_functionflow.png)
 
 ### Fusion
 
-![fusion ProgramFlow](documentation/Dehaze_Enhance_fusion.png)
+![fusion ProgramFlow](documentation/Fusion_functionflow.png)
 
 ## **INCLUDED FILES**
 

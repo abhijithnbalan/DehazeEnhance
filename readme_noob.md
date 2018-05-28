@@ -6,6 +6,14 @@
 
 ## __Overview__
 
+
+### Dark Channel Prior
+![DCP ProgramFlow](documentation/DarkChannel_flowchart.png)
+
+### Fusion
+
+![fusion ProgramFlow](documentation/Fusion_flowchart.png)
+
 _Underwater images and videos suffer from quality loss because of color shift(the blue,green,yellow,grey hue according to the water type) and less contrast(backward and forward scattering in water). This makes the image blurry and to have untrue colors_
 
 _This program will recover the original color and contrast from the underwater image and thus enhances the image_
