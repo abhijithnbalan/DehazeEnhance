@@ -28,11 +28,20 @@ class DehazeEnhance : public ImageProcessing
         
         cv::Rect crop_window;
         cv::Mat mask;
+        //For Simplified DCP
+        int Airlightp;          //airlight value of previous frame
+        int Airlight;           //airlight value of current frame
+        int ad; 
+        const double alpha = 0.05;    //alpha smoothing
+
+
 
     protected:
 
     public: 
-    
+        int numThreads = 4;
+        int clahe_type = 0;
+
         std::string filename;
         bool debug_mode;
         bool dev_mode;
@@ -59,6 +68,17 @@ class DehazeEnhance : public ImageProcessing
         CaptureFrame recover_image(CaptureFrame input_image);
         CaptureFrame recover_image_shallow(CaptureFrame input_image);
 
+        //Simplified DCP
+        cv::Mat getMedianDarkChannel(cv::Mat src, int patch);
+        int estimateA(cv::Mat DC);
+        cv::Mat estimateTransmission(cv::Mat DCP, int ac);
+        cv::Mat getDehazed(cv::Mat source, cv::Mat t, int al);
+        cv::Mat SimplifiedDCP(cv::Mat frame);
+        std::vector<CaptureFrame> getFrames(CaptureFrame vid, int length);
+        std::vector<CaptureFrame> MultiThreadSimpleDCP(CaptureFrame input, int length);
+        int framecount = 0;
+    
+       
         //Fusion Algorithm
         void fusion(CaptureFrame input);
         CaptureFrame fusion(CaptureFrame input , int mode);

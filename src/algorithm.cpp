@@ -9,6 +9,36 @@
 #include "logger.h"
 #include "capture_frame.h"
 
+cv::Mat Algorithm::CLAHElab(cv::Mat frame){
+
+    cv::Mat lab_img;
+    cv::cvtColor(frame, lab_img, cv::COLOR_BGR2Lab);
+    std::vector<cv::Mat> slices(3);
+    cv::split(lab_img,slices);
+
+    cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
+    clahe->setClipLimit(2);
+    cv::Mat dst;
+    clahe -> apply(slices[0],dst);
+    dst.copyTo(slices[0]);
+    cv::merge(slices,lab_img);
+
+    cv::Mat img_clahe;
+    cv::cvtColor(lab_img, img_clahe, cv::COLOR_Lab2BGR);
+
+    return img_clahe;
+}
+
+CaptureFrame Algorithm::CLAHElab(CaptureFrame input){
+    cv::Mat frame = input.retrieve_image();
+    cv::Mat segmented = CLAHElab(frame);
+
+    CaptureFrame output;
+    output.reload_image(segmented,"LAB_clahe");
+    return output;
+}
+
+
 CaptureFrame Algorithm::CLAHE_dehaze(CaptureFrame object) //CLAHE based basic dehazing algorithm
 {
     cv::Mat segmented;

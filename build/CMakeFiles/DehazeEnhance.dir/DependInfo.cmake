@@ -4,14 +4,14 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/rd/Vision_Opencv/DehazeEnhance/src/algorithm.cpp" "/home/rd/Vision_Opencv/DehazeEnhance/build/CMakeFiles/DehazeEnhance.dir/src/algorithm.cpp.o"
-  "/home/rd/Vision_Opencv/DehazeEnhance/src/capture_frame.cpp" "/home/rd/Vision_Opencv/DehazeEnhance/build/CMakeFiles/DehazeEnhance.dir/src/capture_frame.cpp.o"
-  "/home/rd/Vision_Opencv/DehazeEnhance/src/dehaze_enhance.cpp" "/home/rd/Vision_Opencv/DehazeEnhance/build/CMakeFiles/DehazeEnhance.dir/src/dehaze_enhance.cpp.o"
-  "/home/rd/Vision_Opencv/DehazeEnhance/src/image_processing.cpp" "/home/rd/Vision_Opencv/DehazeEnhance/build/CMakeFiles/DehazeEnhance.dir/src/image_processing.cpp.o"
-  "/home/rd/Vision_Opencv/DehazeEnhance/src/logger.cpp" "/home/rd/Vision_Opencv/DehazeEnhance/build/CMakeFiles/DehazeEnhance.dir/src/logger.cpp.o"
-  "/home/rd/Vision_Opencv/DehazeEnhance/src/main.cpp" "/home/rd/Vision_Opencv/DehazeEnhance/build/CMakeFiles/DehazeEnhance.dir/src/main.cpp.o"
-  "/home/rd/Vision_Opencv/DehazeEnhance/src/timer.cpp" "/home/rd/Vision_Opencv/DehazeEnhance/build/CMakeFiles/DehazeEnhance.dir/src/timer.cpp.o"
-  "/home/rd/Vision_Opencv/DehazeEnhance/src/view_frame.cpp" "/home/rd/Vision_Opencv/DehazeEnhance/build/CMakeFiles/DehazeEnhance.dir/src/view_frame.cpp.o"
+  "/home/vineet/cv_software/new_prev/DehazeEnhance/src/algorithm.cpp" "/home/vineet/cv_software/new_prev/DehazeEnhance/build/CMakeFiles/DehazeEnhance.dir/src/algorithm.cpp.o"
+  "/home/vineet/cv_software/new_prev/DehazeEnhance/src/capture_frame.cpp" "/home/vineet/cv_software/new_prev/DehazeEnhance/build/CMakeFiles/DehazeEnhance.dir/src/capture_frame.cpp.o"
+  "/home/vineet/cv_software/new_prev/DehazeEnhance/src/dehaze_enhance.cpp" "/home/vineet/cv_software/new_prev/DehazeEnhance/build/CMakeFiles/DehazeEnhance.dir/src/dehaze_enhance.cpp.o"
+  "/home/vineet/cv_software/new_prev/DehazeEnhance/src/image_processing.cpp" "/home/vineet/cv_software/new_prev/DehazeEnhance/build/CMakeFiles/DehazeEnhance.dir/src/image_processing.cpp.o"
+  "/home/vineet/cv_software/new_prev/DehazeEnhance/src/logger.cpp" "/home/vineet/cv_software/new_prev/DehazeEnhance/build/CMakeFiles/DehazeEnhance.dir/src/logger.cpp.o"
+  "/home/vineet/cv_software/new_prev/DehazeEnhance/src/main.cpp" "/home/vineet/cv_software/new_prev/DehazeEnhance/build/CMakeFiles/DehazeEnhance.dir/src/main.cpp.o"
+  "/home/vineet/cv_software/new_prev/DehazeEnhance/src/timer.cpp" "/home/vineet/cv_software/new_prev/DehazeEnhance/build/CMakeFiles/DehazeEnhance.dir/src/timer.cpp.o"
+  "/home/vineet/cv_software/new_prev/DehazeEnhance/src/view_frame.cpp" "/home/vineet/cv_software/new_prev/DehazeEnhance/build/CMakeFiles/DehazeEnhance.dir/src/view_frame.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 

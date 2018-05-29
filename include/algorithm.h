@@ -30,6 +30,8 @@ public:
   //Image Enhancing
 
   //Public
+  cv::Mat CLAHElab(cv::Mat frame);
+  CaptureFrame CLAHElab(CaptureFrame input);
   CaptureFrame CLAHE_dehaze_shallow(CaptureFrame input_image);
   CaptureFrame CLAHE_dehaze(CaptureFrame input_image);  //CLAHE contrast enhancement
   cv::Mat CLAHE_dehaze(cv::Mat input_image);            //CLAHE contrast enhancement

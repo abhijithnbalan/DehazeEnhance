@@ -3,7 +3,8 @@ PROJECT(DehazeEnhance)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
-find_package( OpenCV REQUIRED )
+SET("OpenCV_DIR" "/home/vineet/cv-software/opencv-3.3.0/build/")
+find_package( OpenCV REQUIRED)
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 
 SET(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_modul~es")
