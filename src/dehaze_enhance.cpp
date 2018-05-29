@@ -884,7 +884,7 @@ void DehazeEnhance::video_enhance(std::string method, CaptureFrame video1)
         logger.log_info("Video writing completed");
     }
 
-    if (method == "fusion")
+    else if (method == "fusion")
     {
         CaptureFrame output;
         logger.log_info("Fusion method for video enhance");
@@ -910,7 +910,37 @@ void DehazeEnhance::video_enhance(std::string method, CaptureFrame video1)
 
             cv::waitKey(3);
 
-           // outputVideo1 << output.retrieve_image().clone(); //Writing into video file
+           outputVideo1 << output.retrieve_image().clone(); //Writing into video file
+            if (dev_mode)
+            {
+                viewer.single_view_uninterrupted(output, 50); //show output
+            }
+            if (cv::waitKey(10) > 0)
+                break; //wait for keypress to exit the program
+        }
+        logger.log_info("Video writing completed");
+    }
+    else if(method == "CLAHE")
+    {
+        CaptureFrame output;
+        logger.log_info("CLAHE method for video enhance");
+    for(;;)
+    {
+        try
+            {
+                video1.frame_extraction();
+                // image = resize_image(video,50);//Optional resize
+                // video.reload_image_shallow(video1.retrieve_image()(roi), "region of video");
+            }
+            catch (...)
+            {
+                logger.log_warn("End of video reached");
+                break;
+            }
+
+        output = algo.CLAHE_dehaze(video1);
+        
+        outputVideo1 << output.retrieve_image().clone(); //Writing into video file
             if (dev_mode)
             {
                 viewer.single_view_uninterrupted(output, 50); //show output
@@ -935,7 +965,7 @@ CaptureFrame DehazeEnhance::fusion(CaptureFrame input, int mode) //Dehazing by f
     en_CLAHE = algo.CLAHE_dehaze(video);  //Contrast enhanced image
     white_balanced_image = algo.balance_white(video); //White balanced image
 
-    // viewer.multiple_view_uninterrupted(white_balanced_image,en_CLAHE,50);
+    viewer.multiple_view_uninterrupted(white_balanced_image,en_CLAHE,50);
 
     //PREPARING THE WEIGHTS
     laplacian_contrast_1 = algo.laplacian_contrast(white_balanced_image); //Laplacian contrast weight
@@ -1003,6 +1033,11 @@ CaptureFrame DehazeEnhance::comparison(CaptureFrame input, CaptureFrame enhanced
     CaptureFrame output(in, "Comparison"); //Result
 
     return output;
+}
+
+CaptureFrame DehazeEnhance::CLAHE_enhance(CaptureFrame input)
+{
+
 }
 
 DehazeEnhance::DehazeEnhance()

@@ -131,6 +131,15 @@ int main(int argc, char **argv) //The main Function.
                     de_en.white_algo = white_algo;
                     de_en.fusion(input_image); //Enhancing by fusion method.
                 }
+                else if (std::string(argv[3]) == "CLAHE")
+                {
+                    logger.log_warn("Image Enhancement using Fusion ");
+                    de_en.white_algo = white_algo;
+                    CaptureFrame output;
+                    output = de_en.algo.CLAHE_dehaze(input_image); //Enhancing by fusion method.
+                    ViewFrame viewer;
+                    viewer.single_view_interrupted(output,50);
+                }
                 else
                     logger.log_error("Unidentified algorithm. Supported algorithms are DCP and fusion");
             }
@@ -155,6 +164,16 @@ int main(int argc, char **argv) //The main Function.
                     timer1.timer_init();
                     de_en.white_algo = white_algo;
                     de_en.video_enhance("fusion", input_image);
+                    timer1.timer_end();
+                    std::cout<<"Total time taken : "<<timer1.execution_time/60<<" minutes";
+                }
+                 else if (std::string(argv[3]) == "CLAHE")
+                {
+                    logger.log_warn("Image Enhancement using CLAHE ");
+
+                    timer1.timer_init();
+                    de_en.white_algo = white_algo;
+                    de_en.video_enhance("CLAHE", input_image);
                     timer1.timer_end();
                     std::cout<<"Total time taken : "<<timer1.execution_time/60<<" minutes";
                 }

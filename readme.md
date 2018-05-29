@@ -27,6 +27,7 @@ Make sure you have the following files in your system
 16. log4cpp.properties
 17. Image_Mosaic.log (will be automatically created if not)
 18. CMakeLists.txt
+19. configure.json
 
 Dependencies
 
@@ -155,6 +156,7 @@ _DCP_ : Dark Channel Prior Algorithm
 
 _fusion_ : Fusion algorithm
 
+_CLAHE_  : Basic CLAHE algorithm
 
 
 ## PROGRAM ACCESSIBLE PARAMETERS

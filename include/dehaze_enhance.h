@@ -39,6 +39,8 @@ class DehazeEnhance : public ImageProcessing
     protected:
 
     public: 
+
+        std::string DCP_type;
         int numThreads = 4;
         int clahe_type = 0;
 
@@ -67,6 +69,9 @@ class DehazeEnhance : public ImageProcessing
         void find_transmission(CaptureFrame image);
         CaptureFrame recover_image(CaptureFrame input_image);
         CaptureFrame recover_image_shallow(CaptureFrame input_image);
+        
+        //basic simple videos
+        CaptureFrame CLAHE_enhance(CaptureFrame);
 
         //Simplified DCP
         cv::Mat getMedianDarkChannel(cv::Mat src, int patch);

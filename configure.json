@@ -12,10 +12,10 @@
         "DefaultVideo"                  :"samples/default.mp4",
         "DefaultImage"                  :"samples/default.jpg",
 
-        "RegionOfInterest_x"            :10,
-        "RegionOfInterest_y"            :10,
-        "RegionOfInterest_width"        :80,
-        "RegionOfInterest_height"       :80
+        "RegionOfInterest_x"            :50,
+        "RegionOfInterest_y"            :0,
+        "RegionOfInterest_width"        :50,
+        "RegionOfInterest_height"       :100
     },
 
 
@@ -30,6 +30,8 @@
 
     "Dark Channel Prior":
     {
+        "DCP_type"                      :"simple",
+        "NumberOfThreads"               :4,
         "DarkChannelPatchSize"          :4,
         "SaturationWeight"              :0.7,
         "DarkChannelWeight"             :0.3,
