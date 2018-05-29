@@ -7,6 +7,173 @@
 #include "timer.h"
 #include "view_frame.h"
 
+//median filtered dark channel
+cv::Mat DehazeEnhance::getMedianDarkChannel(cv::Mat src, int patch)
+{
+    cv::Mat rgbmin = cv::Mat::zeros(src.rows, src.cols, CV_8UC1);
+    cv::Mat MDCP;
+    cv::Vec3b intensity;
+    int m,n;
+ //    cv::parallel_for_(cv::Range(0, src.rows*src.cols), [&](const cv::Range& range){
+ //    for (int l = range.start; l < range.end; l++){
+ //     m = l/src.cols;
+ //     n = l%src.cols;
+ //     intensity = src.at<Vec3b>(m,n);
+    //  rgbmin.at<uchar>(m,n) = min(min(intensity.val[0], intensity.val[1]), intensity.val[2]);
+ //    }
+    // });
+
+    for(int m=0; m<src.rows; m++)
+    {
+        for(int n=0; n<src.cols; n++)
+        {
+            intensity = src.at<cv::Vec3b>(m,n);
+            rgbmin.at<uchar>(m,n) = cv::min(cv::min(intensity.val[0], intensity.val[1]), intensity.val[2]);
+        }
+    }
+
+    medianBlur(rgbmin, MDCP, patch);
+    return MDCP;
+
+}
+
+
+//estimate airlight by the brightest pixel in dark channel (proposed by He et al.)
+int DehazeEnhance::estimateA(cv::Mat DC)
+{
+    double minDC, maxDC;
+    cv::minMaxLoc(DC, &minDC, &maxDC);
+    //cout<<"estimated airlight is:"<<maxDC<<endl;
+    return maxDC;
+}
+
+
+//estimate transmission map
+cv::Mat DehazeEnhance::estimateTransmission(cv::Mat DCP, int ac)
+{
+    double w = 0.75;
+    cv::Mat transmission = cv::Mat::zeros(DCP.rows, DCP.cols, CV_8UC1);
+    cv::Scalar intensity;
+    // int m,n;
+    // cv::parallel_for_(cv::Range(0, DCP.rows*DCP.cols), [&](const cv::Range& range){
+ //    for (int l = range.start; l < range.end; l++){
+ //     m = l/DCP.cols;
+ //     n = l%DCP.cols;
+ //     intensity = DCP.at<uchar>(m,n);
+    //  transmission.at<uchar>(m,n) = (1 - w * intensity.val[0] / ac) * 255;
+ //    }
+    // });
+
+
+    for (int m=0; m<DCP.rows; m++)
+    {
+        for (int n=0; n<DCP.cols; n++)
+        {
+            intensity = DCP.at<uchar>(m,n);
+            transmission.at<uchar>(m,n) = (1 - w * intensity.val[0] / ac) * 255;
+        }
+    }
+    return transmission;
+}
+
+
+//dehazing foggy image
+cv::Mat DehazeEnhance::getDehazed(cv::Mat source, cv::Mat t, int al)
+{
+    double tmin = 0.1;
+    double tmax;
+    
+    cv::Scalar inttran;
+    cv::Vec3b intsrc;
+    cv::Mat dehazed = cv::Mat::zeros(source.rows, source.cols, CV_8UC3);
+    int i,j;
+    // cv::parallel_for_(cv::Range(0, source.rows*source.cols), [&](const cv::Range& range){
+ //    for (int l = range.start; l < range.end; l++){
+ //     i= l/source.cols;
+ //     j= l%source.cols;
+ //     inttran = t.at<uchar>(i,j);
+    //  intsrc = source.at<Vec3b>(i,j);
+    //  tmax = (inttran.val[0]/255) < tmin ? tmin : (inttran.val[0]/255);
+    //  for(int k=0; k<3; k++)
+    //  {
+    //      dehazed.at<Vec3b>(i,j)[k] = abs((intsrc.val[k] - al) / tmax + al) > 255 ? 255 : abs((intsrc.val[k] - al) / tmax + al);
+    //  }
+ //    }
+    // });
+
+
+    for(int i=0; i<source.rows; i++)
+    {
+        for(int j=0; j<source.cols; j++)
+        {
+            inttran = t.at<uchar>(i,j);
+            intsrc = source.at<cv::Vec3b>(i,j);
+            tmax = (inttran.val[0]/255) < tmin ? tmin : (inttran.val[0]/255);
+            for(int k=0; k<3; k++)
+            {
+                dehazed.at<cv::Vec3b>(i,j)[k] = cv::abs((intsrc.val[k] - al) / tmax + al) > 255 ? 255 : cv::abs((intsrc.val[k] - al) / tmax + al);
+            }
+        }
+    }
+    return dehazed;
+}
+
+cv::Mat DehazeEnhance::SimplifiedDCP(cv::Mat frame){
+    cv::Mat fogfree;
+    cv::Mat darkChannel;
+    cv::Mat T;
+    
+    if (framecount == 1)
+    {
+        darkChannel = getMedianDarkChannel(frame, 5);
+        Airlight = estimateA(darkChannel);
+        T = estimateTransmission(darkChannel, Airlight);
+        ad = Airlight;
+        fogfree = getDehazed(frame, T, Airlight);
+        
+    }
+    else{
+        Airlightp = ad;
+        darkChannel = getMedianDarkChannel(frame, 5);
+        Airlight = estimateA(darkChannel);
+        T = estimateTransmission(darkChannel, Airlight);
+        ad = int( alpha * double(Airlight) + (1 - alpha) * double(Airlightp));//airlight smoothing
+        fogfree = getDehazed(frame, T, ad);
+        
+    }
+    return fogfree;
+}
+
+std::vector<CaptureFrame> DehazeEnhance::getFrames(CaptureFrame vid, int numThreads){
+    std::vector<CaptureFrame> frames(numThreads);
+    for (int i = 0; i < numThreads; ++i)
+    {
+        vid.frame_extraction();
+        frames[i].reload_image(vid.retrieve_image()(roi),"newFrame");
+    }
+    return frames;
+}
+
+
+std::vector<CaptureFrame> DehazeEnhance::MultiThreadSimpleDCP(CaptureFrame input, int numThreads){
+    std::vector<CaptureFrame> frames(numThreads);
+    std::vector<CaptureFrame> output(numThreads);
+    frames = getFrames(input, numThreads);
+    //std::vector<DehazeEnhance> DE(numThreads);
+    cv::parallel_for_(cv::Range(0, numThreads), [&](const cv::Range& range){
+    for (int i = range.start; i < range.end; i++){
+        if(clahe_type == 1)
+            output[i] = algo.CLAHElab(frames[i]);
+        else
+            output[i]= algo.CLAHE_dehaze(frames[i]);
+        output[i].reload_image(SimplifiedDCP(output[i].retrieve_image()), "Dehazed");
+    }   
+    });
+    framecount++;
+    return output;
+
+}
+
 void DehazeEnhance::dark_channel_prior(CaptureFrame input) //Dark channel prior method.
 {
     logger.debug_mode = debug_mode;
@@ -671,15 +838,17 @@ void DehazeEnhance::video_enhance(std::string method, CaptureFrame video1)
         std::cout << "Could not open the output video for write: " << std::endl;
         return;
     }
-    CaptureFrame output;
     if (method == "DCP")
     {
+        //CaptureFrame output;
+        std::vector<CaptureFrame> output;
         logger.log_info("Dark Channel Prior method for video enhance");
         for (;;)
         {
             try
             {
-                video1.frame_extraction();
+                output = MultiThreadSimpleDCP(video1, numThreads);
+                //video1.frame_extraction();
                 // image = resize_image(video,50);
             }
             catch (...)
@@ -687,18 +856,29 @@ void DehazeEnhance::video_enhance(std::string method, CaptureFrame video1)
                 logger.log_warn("End of video reached");
                 break;
             }
-            output.clear();
+            //output.clear();
             
-            output = dark_channel_prior(video1, 0); //Dark channel algorithm
-            
-            cv::waitKey(3);
-
-            outputVideo1 << output.retrieve_image().clone(); //write into video file
-            if (dev_mode)
+            //output = dark_channel_prior(video1, 0); //Dark channel algorithm
+            // cv::Mat out = CLAHEalgo(video1.retrieve_image());
+            // output.reload_image(SimplifiedDCP(out),"output");
+            //cv::waitKey(3);
+            int key = 0;
+            for (int i = 0; i < numThreads; ++i)
             {
-                viewer.single_view_uninterrupted(output, 50); //Display the result
+                outputVideo1 << output[i].retrieve_image().clone(); //write into video file
             }
-            if (cv::waitKey(10) > 0)
+            
+            for (int i = 0; i < numThreads; ++i)
+            {
+                if (dev_mode)
+                {
+                    viewer.single_view_uninterrupted(output[i], 50); //Display the result
+                    key = cv::waitKey(30);
+                }
+            }
+            // viewer.single_view_uninterrupted(output, 50); //Display the result
+            // key = cv::waitKey(30);
+            if (key > 0)
                 break;
         }
         logger.log_info("Video writing completed");
@@ -706,6 +886,7 @@ void DehazeEnhance::video_enhance(std::string method, CaptureFrame video1)
 
     if (method == "fusion")
     {
+        CaptureFrame output;
         logger.log_info("Fusion method for video enhance");
         algo.white_algo = white_algo;
         CaptureFrame compare;
@@ -729,7 +910,7 @@ void DehazeEnhance::video_enhance(std::string method, CaptureFrame video1)
 
             cv::waitKey(3);
 
-            outputVideo1 << output.retrieve_image().clone(); //Writing into video file
+           // outputVideo1 << output.retrieve_image().clone(); //Writing into video file
             if (dev_mode)
             {
                 viewer.single_view_uninterrupted(output, 50); //show output
